@@ -99,7 +99,7 @@ def main_worker(gpu, ngpus_per_node, args):
     model = CaCo(models.__dict__[args.arch], args,
                            args.moco_dim, args.moco_m)
 
-    optimizer = torch.optim.SGD(parameters, init_lr,
+    optimizer = torch.optim.SGD(model.parameters(), init_lr,
                                 momentum=args.momentum,
                                 weight_decay=args.weight_decay)
     #from model.optimizer import  LARS
