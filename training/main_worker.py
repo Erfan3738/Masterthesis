@@ -11,7 +11,7 @@ import datetime
 import time
 import numpy as np
 import math
-from cifar10.resnet18 import ResNet18
+from cifar10 import resnet18
 import model.ResNet as models
 from model.CaCo import CaCo, CaCo_PN
 from ops.os_operation import mkdir, mkdir_rank
@@ -94,9 +94,9 @@ def main_worker(gpu, ngpus_per_node, args):
     print("=> creating model '{}'".format(args.arch))
 
     Memory_Bank = CaCo_PN(args.cluster,args.moco_dim)
-    model = ResNet18(use_split_bn=True, num_splits=8, num_classes=128)
+    
 
-    model = CaCo(model, args,
+    model = CaCo(resnet18.ResNet18, args,
                            args.moco_dim, args.moco_m)
 
     model = nn.SyncBatchNorm.convert_sync_batchnorm(model)  # use global bn
