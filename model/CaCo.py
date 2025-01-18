@@ -16,8 +16,12 @@ class CaCo(nn.Module):
         self.args=args
         self.m = m
 
-        self.encoder_q = base_encoder(use_split_bn=True, num_splits=8, num_classes=dim)
-        self.encoder_k = base_encoder(use_split_bn=True, num_splits=8, num_classes=dim)
+        self.encoder_q = base_encoder(num_classes=dim)
+        self.enc.conv1 = nn.Conv2d(3, 64, 3, 1, 1, bias=False)
+        self.enc.maxpool = nn.Identity()
+        self.encoder_k = base_encoder(num_classes=dim)
+        self.enc.conv1 = nn.Conv2d(3, 64, 3, 1, 1, bias=False)
+        self.enc.maxpool = nn.Identity()
         dim_mlp = self.encoder_q.fc.weight.shape[1]
         
         self.encoder_q.fc = self._build_mlp(2,dim_mlp,args.mlp_dim,dim,last_bn=False)
@@ -86,22 +90,22 @@ class CaCo(nn.Module):
     
 
     def forward_withoutpred_sym(self,im_q,im_k,moco_momentum):
-        q = self.encoder_q(im_q, feature_only=False)  # queries: NxC
+        q = self.encoder_q(im_q,use_feature=False)  # queries: NxC
         q = nn.functional.normalize(q, dim=1)
         q_pred = q
-        k_pred = self.encoder_q(im_k, feature_only=False)  # queries: NxC
+        k_pred = self.encoder_q(im_k,use_feature=False)  # queries: NxC
         k_pred = nn.functional.normalize(k_pred, dim=1)
         with torch.no_grad():  # no gradient to keys
                
             self._momentum_update_key_encoder_param(moco_momentum)
             im_k_, idx_unshuffle1 = self._batch_shuffle_single_gpu(im_k)
             im_q_, idx_unshuffle2 = self._batch_shuffle_single_gpu(im_q)
-            q = self.encoder_k(im_q_, feature_only=False)  # keys: NxC
+            q = self.encoder_k(im_q_, use_feature=False)  # keys: NxC
             q = nn.functional.normalize(q, dim=1)
             q = self._batch_unshuffle_single_gpu(q, idx_unshuffle2)
             q = q.detach()
 
-            k = self.encoder_k(im_k_, feature_only=False)  # keys: NxC
+            k = self.encoder_k(im_k_, use_feature=False)  # keys: NxC
             k = nn.functional.normalize(k, dim=1)
             k = self._batch_unshuffle_single_gpu(k, idx_unshuffle1)
             k = k.detach()
