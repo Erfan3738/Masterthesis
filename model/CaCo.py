@@ -37,8 +37,8 @@ class CaCo(nn.Module):
         self.args=args
         self.m = m
 
-        self.encoder_q = base_encoder(use_split_bn=True, num_splits=8, num_classes=dim)
-        self.encoder_k = base_encoder(use_split_bn=True, num_splits=8, num_classes=dim)
+        self.encoder_q = base_encoder()
+        self.encoder_k = base_encoder()
         dim_mlp = self.encoder_q.fc.weight.shape[1]
         
         self.encoder_q.fc = self._build_mlp(2,dim_mlp,args.mlp_dim,dim,last_bn=False)
