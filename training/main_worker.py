@@ -94,8 +94,9 @@ def main_worker(gpu, ngpus_per_node, args):
     print("=> creating model '{}'".format(args.arch))
 
     Memory_Bank = CaCo_PN(args.cluster,args.moco_dim)
+    model = ResNet18()
 
-    model = CaCo(models.__dict__[args.arch], args,
+    model = CaCo(model, args,
                            args.moco_dim, args.moco_m)
 
     model = nn.SyncBatchNorm.convert_sync_batchnorm(model)  # use global bn
