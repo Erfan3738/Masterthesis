@@ -36,8 +36,7 @@ class CaCo(nn.Module):
         super(CaCo, self).__init__()
         self.args=args
         self.m = m
-        # create the encoders
-        # num_classes is the output fc dimension
+
         self.encoder_q = base_encoder(num_classes=dim)
         self.encoder_q.conv1 = nn.Conv2d(3, 64, 3, 1, 1, bias=False)
         self.encoder_q.maxpool = nn.Identity()
@@ -45,7 +44,7 @@ class CaCo(nn.Module):
         self.encoder_k.conv1 = nn.Conv2d(3, 64, 3, 1, 1, bias=False)
         self.encoder_k.maxpool = nn.Identity()
         dim_mlp = self.encoder_q.fc.weight.shape[1]
-        # we do not keep 
+        
         self.encoder_q.fc = self._build_mlp(2,dim_mlp,args.mlp_dim,dim,last_bn=False)
         self.encoder_k.fc = self._build_mlp(2, dim_mlp, args.mlp_dim, dim,last_bn=False)
         
@@ -54,8 +53,8 @@ class CaCo(nn.Module):
         #self.predictor = self._build_mlp(2,dim,args.mlp_dim,dim,last_bn=False)
 
         for param_q, param_k in zip(self.encoder_q.parameters(), self.encoder_k.parameters()):
-            param_k.data.copy_(param_q.data)  # initialize
-            param_k.requires_grad = False  # not update by gradient
+            param_k.data.copy_(param_q.data) 
+            param_k.requires_grad = False  
 
         self.K=args.cluster
 
@@ -71,8 +70,7 @@ class CaCo(nn.Module):
                 mlp.append(nn.BatchNorm1d(dim2))
                 mlp.append(nn.ReLU(inplace=True))
             elif last_bn:
-                # follow SimCLR's design: https://github.com/google-research/simclr/blob/master/model_util.py#L157
-                # for simplicity, we further removed gamma in BN
+
                 mlp.append(nn.BatchNorm1d(dim2, affine=False))
 
         return nn.Sequential(*mlp)
@@ -99,8 +97,8 @@ class CaCo(nn.Module):
         k_pred = self.encoder_q(im_k, use_feature=False)  # queries: NxC
         k_pred = nn.functional.normalize(k_pred, dim=1)
         with torch.no_grad():  # no gradient to keys
-                # if update_key_encoder:
-            self._momentum_update_key_encoder_param(moco_momentum)# update the key encoder
+               
+            self._momentum_update_key_encoder_param(moco_momentum)
 
             q = self.encoder_k(im_q, use_feature=False)  # keys: NxC
             q = nn.functional.normalize(q, dim=1)
@@ -119,8 +117,8 @@ class CaCo(nn.Module):
             q_list.append(q)
         key_list = []
         with torch.no_grad():  # no gradient to keys
-                # if update_key_encoder:
-            self._momentum_update_key_encoder_param(moco_momentum)# update the key encoder
+                
+            self._momentum_update_key_encoder_param(moco_momentum)
             for key_image in [im_k]+im_q_list[:1]:
                 q = self.encoder_k(key_image, use_feature=False)  # keys: NxC
                 q = nn.functional.normalize(q, dim=1)
