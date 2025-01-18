@@ -45,7 +45,7 @@ def knn_monitor(net, memory_data_loader, test_data_loader,
             if vit_backbone:
                 feature = net(data, feature_only=True)
             else:
-                feature = net(data)
+                feature = net(data,feature_only=True)
                 if pool_ops:
                     feature = avgpool(feature)
                 feature = torch.flatten(feature, 1)
