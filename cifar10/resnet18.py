@@ -31,7 +31,7 @@ class SplitBatchNorm(nn.BatchNorm2d):
                 input, self.running_mean, self.running_var, self.weight, self.bias, False, self.momentum, self.eps
             )
 
-class ResNet18FeatureExtractor(nn.Module):
+class resnet18(nn.Module):
     def __init__(self, use_split_bn=False, num_splits=1, num_classes=10):
         super().__init__()
 
