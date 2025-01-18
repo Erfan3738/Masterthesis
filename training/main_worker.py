@@ -94,7 +94,7 @@ def main_worker(gpu, ngpus_per_node, args):
     print("=> creating model '{}'".format(args.arch))
 
     Memory_Bank = CaCo_PN(args.cluster,args.moco_dim)
-    model = ResNet18()
+    model = ResNet18(use_split_bn=True, num_splits=8, num_classes=128)
 
     model = CaCo(model, args,
                            args.moco_dim, args.moco_m)
