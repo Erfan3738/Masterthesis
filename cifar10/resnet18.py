@@ -31,7 +31,7 @@ class SplitBatchNorm(nn.BatchNorm2d):
                 input, self.running_mean, self.running_var, self.weight, self.bias, False, self.momentum, self.eps
             )
 
-class resnet18(nn.Module):
+class ResNet18FeatureExtractor(nn.Module):
     def __init__(self, use_split_bn=False, num_splits=1, num_classes=10):
         super().__init__()
 
@@ -75,7 +75,7 @@ class resnet18(nn.Module):
 
         return nn.Sequential(*layers)
 
-    def forward(self, x, extract_features=False):
+    def forward(self, x, feature_only=False):
         # Initial layers
         x = self.conv1(x)
         x = self.bn1(x)
@@ -88,7 +88,7 @@ class resnet18(nn.Module):
         features = self.layer3(x)
         x = self.layer4(features)
 
-        if extract_features:
+        if feature_only:
             return features  # Return intermediate features
 
         # Classification layers
