@@ -96,7 +96,7 @@ def main_worker(gpu, ngpus_per_node, args):
     Memory_Bank = CaCo_PN(args.cluster,args.moco_dim)
     
 
-    model = CaCo(resnet18.ResNet18, args,
+    model = CaCo(models.__dict__[args.arch], args,
                            args.moco_dim, args.moco_m)
 
      
