@@ -87,10 +87,10 @@ class CaCo(nn.Module):
     
 
     def forward_withoutpred_sym(self,im_q,im_k,moco_momentum):
-        q = self.encoder_q(im_q, use_feature=False)  # queries: NxC
+        q = self.encoder_q(im_q, feature_only=False)  # queries: NxC
         q = nn.functional.normalize(q, dim=1)
         q_pred = q
-        k_pred = self.encoder_q(im_k, use_feature=False)  # queries: NxC
+        k_pred = self.encoder_q(im_k, feature_only=False)  # queries: NxC
         k_pred = nn.functional.normalize(k_pred, dim=1)
         with torch.no_grad():  # no gradient to keys
                
@@ -100,7 +100,7 @@ class CaCo(nn.Module):
             q = nn.functional.normalize(q, dim=1)
             q = q.detach()
 
-            k = self.encoder_k(im_k, use_feature=False)  # keys: NxC
+            k = self.encoder_k(im_k, feature_only=False)  # keys: NxC
             k = nn.functional.normalize(k, dim=1)
             k = k.detach()
 
