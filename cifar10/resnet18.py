@@ -85,14 +85,15 @@ class ResNet18(nn.Module):
         # Feature extraction layers
         x = self.layer1(x)
         x = self.layer2(x)
-        features = self.layer3(x)
-        x = self.layer4(features)
+        x = self.layer3(x)
+        features = self.layer4(x)
+        
 
         if feature_only:
             return features  # Return intermediate features
 
         # Classification layers
-        x = self.avgpool(x)
+        x = self.avgpool(features)
         x = torch.flatten(x, 1)
         x = self.fc(x)
 
