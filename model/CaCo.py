@@ -96,7 +96,7 @@ class CaCo(nn.Module):
                
             self._momentum_update_key_encoder_param(moco_momentum)
 
-            q = self.encoder_k(im_q, use_feature=False)  # keys: NxC
+            q = self.encoder_k(im_q, feature_only=False)  # keys: NxC
             q = nn.functional.normalize(q, dim=1)
             q = q.detach()
 
