@@ -11,7 +11,7 @@ import datetime
 import time
 import numpy as np
 import math
-
+from cifar10.resnet18 import ResNet18
 import model.ResNet as models
 from model.CaCo import CaCo, CaCo_PN
 from ops.os_operation import mkdir, mkdir_rank
