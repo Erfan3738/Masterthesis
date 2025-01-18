@@ -101,7 +101,7 @@ class CaCo(nn.Module):
             q = self._batch_unshuffle_single_gpu(q, idx_unshuffle2)
             q = q.detach()
 
-            k = self.encoder_k(im_k, feature_only=False)  # keys: NxC
+            k = self.encoder_k(im_k_, feature_only=False)  # keys: NxC
             k = nn.functional.normalize(k, dim=1)
             k = self._batch_unshuffle_single_gpu(k, idx_unshuffle1)
             k = k.detach()
