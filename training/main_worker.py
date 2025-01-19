@@ -194,7 +194,8 @@ def main_worker(gpu, ngpus_per_node, args):
                     transforms.RandomGrayscale(p=0.2),
                     
                     transforms.RandomHorizontalFlip(p=0.5),
-                    transforms.ToTensor()
+                    transforms.ToTensor(),
+                    normalize
                                    ]
 
             augmentation2 = [
@@ -207,7 +208,8 @@ def main_worker(gpu, ngpus_per_node, args):
                     
                     
                     transforms.RandomHorizontalFlip(p=0.5),
-                    transforms.ToTensor()
+                    transforms.ToTensor(),
+                    normalize
                     
                 ]
             train_dataset = datasets.ImageFolder(
@@ -220,8 +222,10 @@ def main_worker(gpu, ngpus_per_node, args):
 
             
             transforms.ToTensor(),
+            normalize
             
         ])
+
         from data_processing.imagenet import imagenet
         val_dataset = imagenet(traindir, 1.0, transform_test)
         test_dataset = datasets.ImageFolder(testdir, transform_test)
