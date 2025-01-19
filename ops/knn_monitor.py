@@ -182,7 +182,7 @@ def concat_all_gather(tensor):
 
 # knn monitor as in InstDisc https://arxiv.org/abs/1805.01978
 # implementation follows http://github.com/zhirongw/lemniscate.pytorch and https://github.com/leftthomas/SimCLR
-def knn_predict(feature, feature_bank, feature_labels, classes, knn_k,knn_t=None):
+def knn_predict(feature, feature_bank, feature_labels, classes, knn_neighbor ,knn_t=0.1):
     # compute cos similarity between each feature vector and feature bank ---> [B, N]
     sim_matrix = torch.einsum("nc,mc->nm",[feature,feature_bank])#torch.mm(feature, feature_bank)
     if knn_t is not None:
@@ -283,7 +283,7 @@ def test(net, memory_data_loader, test_data_loader, epoch, args):
             feature = net(data)
             feature = F.normalize(feature, dim=1)
             
-            pred_labels = knn_predict(feature, feature_bank, feature_labels, classes, args.knn_k, args.knn_t)
+            pred_labels = knn_predict(feature, feature_bank, feature_labels, classes, args.knn_neighbor ,knn_t=0.1)
 
             total_num += data.size(0)
             total_top1 += (pred_labels[:, 0] == target).float().sum().item()
