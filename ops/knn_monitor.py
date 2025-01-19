@@ -2,6 +2,7 @@ import torch.nn.functional as F
 import torch
 import torch.nn as nn
 from tqdm import tqdm
+import torch.nn.functional as F
 # code copied from https://colab.research.google.com/github/facebookresearch/moco/blob/colab-notebook/colab/moco_cifar10_demo.ipynb#scrollTo=RI1Y8bSImD7N
 # test using a knn monitor
 def knn_monitor(net, memory_data_loader, test_data_loader,
