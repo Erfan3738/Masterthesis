@@ -291,9 +291,10 @@ def main_worker(gpu, ngpus_per_node, args):
             print("gpu consuming after cleaning:", torch.cuda.memory_allocated()/1024/1024)
 
             try:
-                knn_test_acc=knn_monitor(model.module.encoder_q, val_loader, test_loader,
-                        global_k=min(args.knn_neighbor,len(val_loader.dataset)))
-                print({'*KNN monitor Accuracy': knn_test_acc})
+                accu = test(model.module.encoder_q, val_loader, test_loader, epoch, args)
+                #knn_test_acc=knn_monitor(model.module.encoder_q, val_loader, test_loader,
+                        #global_k=min(args.knn_neighbor,len(val_loader.dataset)))
+                print({'*KNN monitor Accuracy': accu})
                 if args.rank ==0:
                     with open(knn_path,'a+') as file:
                         file.write('%d epoch KNN monitor Accuracy %f\n'%(epoch,knn_test_acc))
