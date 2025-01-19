@@ -297,7 +297,7 @@ def main_worker(gpu, ngpus_per_node, args):
                 print({'*KNN monitor Accuracy': accu})
                 if args.rank ==0:
                     with open(knn_path,'a+') as file:
-                        file.write('%d epoch KNN monitor Accuracy %f\n'%(epoch,knn_test_acc))
+                        file.write('%d epoch KNN monitor Accuracy %f\n'%(epoch,accu))
             except:
                 print("small error raised in knn calcu")
                 knn_test_acc=0
