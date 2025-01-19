@@ -194,7 +194,7 @@ def main_worker(gpu, ngpus_per_node, args):
                     transforms.RandomGrayscale(p=0.2),
                     
                     transforms.RandomHorizontalFlip(p=0.5),
-                    transforms.ToTensor(),
+                    
                     normalize
                                    ]
 
@@ -208,7 +208,7 @@ def main_worker(gpu, ngpus_per_node, args):
                     
                     transforms.ToTensor(),
                     transforms.RandomHorizontalFlip(p=0.5),
-                    transforms.ToTensor(),
+                    
                     normalize
                     
                 ]
@@ -221,7 +221,7 @@ def main_worker(gpu, ngpus_per_node, args):
         transform_test = transforms.Compose([
 
             
-            transforms.ToTensor(),
+            
             normalize
             
         ])
