@@ -1,24 +1,10 @@
-from datetime import datetime
-from functools import partial
-from PIL import Image
-from torch.utils.data import DataLoader
-from torchvision import transforms
-from torchvision.datasets import CIFAR10
-from torchvision.models import resnet
-from tqdm import tqdm
-import argparse
-import json
-import math
-import os
-import pandas as pd
+import torch.nn.functional as F
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-
 # code copied from https://colab.research.google.com/github/facebookresearch/moco/blob/colab-notebook/colab/moco_cifar10_demo.ipynb#scrollTo=RI1Y8bSImD7N
 # test using a knn monitor
 def knn_monitor(net, memory_data_loader, test_data_loader,
-                global_k=200,pool_ops=True,temperature=0.1,
+                global_k=200,pool_ops=True,temperature=0.2,
                 vit_backbone=False):
     net.eval()
     classes = len(memory_data_loader.dataset.classes)
@@ -196,7 +182,7 @@ def concat_all_gather(tensor):
 
 # knn monitor as in InstDisc https://arxiv.org/abs/1805.01978
 # implementation follows http://github.com/zhirongw/lemniscate.pytorch and https://github.com/leftthomas/SimCLR
-def knn_predict(feature, feature_bank, feature_labels, classes, knn_neighbor ,knn_t=0.1):
+def knn_predict(feature, feature_bank, feature_labels, classes, knn_k,knn_t=None):
     # compute cos similarity between each feature vector and feature bank ---> [B, N]
     sim_matrix = torch.einsum("nc,mc->nm",[feature,feature_bank])#torch.mm(feature, feature_bank)
     if knn_t is not None:
@@ -207,7 +193,7 @@ def knn_predict(feature, feature_bank, feature_labels, classes, knn_neighbor ,kn
     sim_labels = torch.gather(feature_labels.expand(feature.size(0), -1), dim=-1, index=sim_indices)
 
     # counts for each class
-    one_hot_label = torch.zeros((feature.size(0) * knn_neighbor, classes), device=sim_labels.device)
+    one_hot_label = torch.zeros((feature.size(0) * knn_k, classes), device=sim_labels.device)
     # [B*K, C]
     one_hot_label = one_hot_label.scatter(dim=-1, index=sim_labels.view(-1, 1), value=1.0)
     # weighted score ---> [B, C]
@@ -274,35 +260,6 @@ def knn_monitor_horovod(net, memory_data_loader, test_data_loader,
             print({'#KNN monitor Accuracy': total_top1 / total_num * 100})
     del feature_bank
     del feature_labels
-    return total_top1 / total_num * 100
-                  
-def test(net, memory_data_loader, test_data_loader, epoch, args):
-    net.eval()
-    classes = len(memory_data_loader.dataset.classes)
-    total_top1, total_top5, total_num, feature_bank = 0.0, 0.0, 0, []
-    with torch.no_grad():
-        # generate feature bank
-        for data, target in tqdm(memory_data_loader, desc='Feature extracting'):
-            feature = net(data.cuda(non_blocking=True))
-            feature = F.normalize(feature, dim=1)
-            feature_bank.append(feature)
-        # [D, N]
-        feature_bank = torch.cat(feature_bank, dim=0).t().contiguous()
-        # [N]
-        feature_labels = torch.tensor(memory_data_loader.dataset.targets, device=feature_bank.device)
-        # loop test data to predict the label by weighted knn search
-        test_bar = tqdm(test_data_loader)
-        for data, target in test_bar:
-            data, target = data.cuda(non_blocking=True), target.cuda(non_blocking=True)
-            feature = net(data)
-            feature = F.normalize(feature, dim=1)
-            
-            pred_labels = knn_predict(feature, feature_bank, feature_labels, classes, args.knn_neighbor ,knn_t=0.1)
-
-            total_num += data.size(0)
-            total_top1 += (pred_labels[:, 0] == target).float().sum().item()
-            test_bar.set_description('Test Epoch: [{}/{}] Acc@1:{:.2f}%'.format(epoch, args.epochs, total_top1 / total_num * 100))
-
     return total_top1 / total_num * 100
 @torch.no_grad()
 def concat_all_gather2(tensor):
