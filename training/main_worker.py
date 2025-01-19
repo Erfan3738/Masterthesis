@@ -223,7 +223,7 @@ def main_worker(gpu, ngpus_per_node, args):
             
         ])
         from data_processing.imagenet import imagenet
-        val_dataset = imagenet(traindir, 0.2, transform_test)
+        val_dataset = imagenet(traindir, 1.0, transform_test)
         test_dataset = datasets.ImageFolder(testdir, transform_test)
 
     else:
