@@ -205,8 +205,6 @@ def main_worker(gpu, ngpus_per_node, args):
                         transforms.ColorJitter(0.4, 0.4, 0.4, 0.1)  # not strengthened
                     ], p=0.8),
                     transforms.RandomGrayscale(p=0.2),
-                    
-                    transforms.ToTensor(),
                     transforms.RandomHorizontalFlip(p=0.5),
                     transforms.ToTensor(),
                     normalize
