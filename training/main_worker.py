@@ -187,7 +187,7 @@ def main_worker(gpu, ngpus_per_node, args):
 
             augmentation1 = [
                     
-                    transforms.Resize(32),
+                    
                     transforms.RandomApply([
                         transforms.ColorJitter(0.4, 0.4, 0.4, 0.1)  # not strengthened
                     ], p=0.8),
@@ -200,7 +200,7 @@ def main_worker(gpu, ngpus_per_node, args):
 
             augmentation2 = [
                     
-                    transforms.Resize(32),
+                    
                     transforms.RandomApply([
                         transforms.ColorJitter(0.4, 0.4, 0.4, 0.1)  # not strengthened
                     ], p=0.8),
