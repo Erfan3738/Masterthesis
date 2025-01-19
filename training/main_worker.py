@@ -218,8 +218,8 @@ def main_worker(gpu, ngpus_per_node, args):
             
         testdir = os.path.join(args.data, 'val')
         transform_test = transforms.Compose([
-            
-            
+
+            transforms.Resize(224)
             transforms.ToTensor(),
             normalize,
         ])
