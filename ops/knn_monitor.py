@@ -10,7 +10,7 @@ def knn_monitor(net, memory_data_loader, test_data_loader,
     classes = len(memory_data_loader.dataset.classes)
     total_top1, total_top5, total_num, feature_bank = 0.0, 0.0, 0, []
     feature_labels=[]
-    avgpool = nn.AdaptiveAvgPool2d((1, 1))
+
     with torch.no_grad():
         # generate feature bank
         for k,(data, target) in enumerate(memory_data_loader):
@@ -20,8 +20,7 @@ def knn_monitor(net, memory_data_loader, test_data_loader,
                 feature = net(data.cuda(non_blocking=True),feature_only=True)
             else:
                 feature = net(data.cuda(non_blocking=True))
-                if pool_ops:
-                    feature = avgpool(feature)
+
                 feature = torch.flatten(feature, 1)
             feature = F.normalize(feature, dim=1)
             feature = concat_all_gather(feature)
@@ -46,8 +45,7 @@ def knn_monitor(net, memory_data_loader, test_data_loader,
                 feature = net(data, feature_only=True)
             else:
                 feature = net(data)
-                if pool_ops:
-                    feature = avgpool(feature)
+
                 feature = torch.flatten(feature, 1)
             feature = F.normalize(feature, dim=1)
             feature = concat_all_gather(feature)
