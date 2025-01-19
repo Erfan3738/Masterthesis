@@ -186,8 +186,8 @@ def main_worker(gpu, ngpus_per_node, args):
         else:
 
             augmentation1 = [
-                    transforms.Resize(224),
-                    transforms.RandomResizedCrop(224,scale=(0.2, 1.)),
+                    
+                    transforms.RandomResizedCrop(32),
                     transforms.RandomApply([
                         transforms.ColorJitter(0.4, 0.4, 0.4, 0.1)  # not strengthened
                     ], p=0.8),
@@ -199,8 +199,8 @@ def main_worker(gpu, ngpus_per_node, args):
                 ]
 
             augmentation2 = [
-                    transforms.Resize(224),
-                    transforms.RandomResizedCrop(224, scale=(0.2, 1.)),
+                    
+                    transforms.RandomResizedCrop(32),
                     transforms.RandomApply([
                         transforms.ColorJitter(0.4, 0.4, 0.4, 0.1)  # not strengthened
                     ], p=0.8),
@@ -219,7 +219,7 @@ def main_worker(gpu, ngpus_per_node, args):
         testdir = os.path.join(args.data, 'val')
         transform_test = transforms.Compose([
 
-            transforms.Resize(224),
+            
             transforms.ToTensor(),
             normalize,
         ])
