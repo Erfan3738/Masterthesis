@@ -189,12 +189,12 @@ def main_worker(gpu, ngpus_per_node, args):
         exit()
 
     train_sampler = RandomSampler(train_dataset)  # For shuffling the training dataset
-    val_sampler = SequentialSampler(val_dataset)  # No shuffling for validation
-    test_sampler = SequentialSampler(test_dataset)
+    #val_sampler = SequentialSampler(val_dataset)  # No shuffling for validation
+    #test_sampler = SequentialSampler(test_dataset)
 
     train_loader = DataLoader(train_dataset, shuffle=False, batch_size=args.batch_size,sampler=train_sampler,pin_memory=True,num_workers=args.workers,drop_last=True)
-    val_loader = DataLoader(val_dataset, shuffle=False, batch_size=args.knn_batch_size,sampler=val_sampler,pin_memory=True,num_workers=args.workers,drop_last=False)
-    test_loader = DataLoader(test_dataset, shuffle=False, batch_size=args.knn_batch_size,sampler=test_sampler,pin_memory=True,num_workers=args.workers,drop_last=False)
+    val_loader = DataLoader(val_dataset, shuffle=False, batch_size=args.knn_batch_size,pin_memory=True,num_workers=args.workers,drop_last=False)
+    test_loader = DataLoader(test_dataset, shuffle=False, batch_size=args.knn_batch_size,pin_memory=True,num_workers=args.workers,drop_last=False)
 
     #init weight for memory bank
     bank_size=args.cluster
