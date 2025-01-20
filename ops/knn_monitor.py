@@ -24,9 +24,9 @@ def knn_monitor(net, memory_data_loader, test_data_loader,
                     feature = avgpool(feature)
                 feature = torch.flatten(feature, 1)
             feature = F.normalize(feature, dim=1)
-            feature = concat_all_gather(feature)
+            
             feature_bank.append(feature)
-            target = concat_all_gather(target)
+            
             feature_labels.append(target)
             print("KNN feature accumulation %d/%d"%(k,len(memory_data_loader)))
         # [D, N]
@@ -54,7 +54,7 @@ def knn_monitor(net, memory_data_loader, test_data_loader,
             pred_labels = knn_predict(feature, feature_bank, feature_labels, classes, global_k,temperature)
             #concat data in other gpus
             #pred_labels = concat_all_gather(pred_labels)
-            target = concat_all_gather(target)
+            
             total_num += target.size(0)
             total_top1 += (pred_labels[:, 0] == target).float().sum().item()
             print("current eval feature size: ",feature.size())
