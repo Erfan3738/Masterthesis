@@ -233,7 +233,7 @@ def main_worker(gpu, ngpus_per_node, args):
 
             try:
                 
-                knn_test_acc=knn_monitor(model.module.encoder_q, val_loader, test_loader,
+                knn_test_acc=knn_monitor(model.encoder_q, val_loader, test_loader,
                         global_k=min(args.knn_neighbor,len(val_loader.dataset)))
                 print({'*KNN monitor Accuracy': knn_test_acc})
                 if args.rank ==0:
