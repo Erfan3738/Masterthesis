@@ -207,7 +207,7 @@ def update_sym_network(model, images, args, Memory_Bank,
         g = -torch.div(g1, torch.norm(d1, dim=0))  - torch.div(g2,torch.norm(d2, dim=0))#/ args.mem_t  # c*k
         g /=cur_adco_t
         
-        g = all_reduce(g) / torch.distributed.get_world_size()
+        
         Memory_Bank.v.data = args.mem_momentum * Memory_Bank.v.data + g #+ args.mem_wd * Memory_Bank.W.data
         Memory_Bank.W.data = Memory_Bank.W.data - memory_lr * Memory_Bank.v.data
     with torch.no_grad():
@@ -365,15 +365,3 @@ def all_reduce(tensor):
     return tensor
 
 
-@torch.no_grad()
-def concat_all_gather(tensor):
-    """
-    Performs all_gather operation on the provided tensors.
-    *** Warning ***: torch.distributed.all_gather has no gradient.
-    """
-    tensors_gather = [torch.ones_like(tensor)
-                      for _ in range(torch.distributed.get_world_size())]
-    torch.distributed.all_gather(tensors_gather, tensor, async_op=False)
-
-    output = torch.cat(tensors_gather, dim=0)
-    return output
