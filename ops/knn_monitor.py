@@ -50,7 +50,7 @@ def knn_monitor(net, memory_data_loader, test_data_loader,
                     feature = avgpool(feature)
                 feature = torch.flatten(feature, 1)
             feature = F.normalize(feature, dim=1)
-            feature = concat_all_gather(feature)
+            
             pred_labels = knn_predict(feature, feature_bank, feature_labels, classes, global_k,temperature)
             #concat data in other gpus
             #pred_labels = concat_all_gather(pred_labels)
