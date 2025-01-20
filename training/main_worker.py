@@ -235,7 +235,7 @@ def main_worker(gpu, ngpus_per_node, args):
         exit()
 
     if args.distributed:
-        train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
+        train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset, shuffle=True)
         val_sampler = torch.utils.data.distributed.DistributedSampler(val_dataset)
         test_sampler = torch.utils.data.distributed.DistributedSampler(test_dataset)
     else:
