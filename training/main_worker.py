@@ -86,13 +86,13 @@ def main_worker(gpu, ngpus_per_node, args):
                                 #weight_decay=args.weight_decay)
    # from ops.LARS import SGD_LARC
     #optimizer = SGD_LARC(optimizer, trust_coefficient=0.001, clip=False, eps=1e-8)
-    from model.optimizer import  LARS
-    optimizer = LARS(model.parameters(), init_lr,
-                         weight_decay=args.weight_decay,
-                         momentum=args.momentum)
-    #from model.optimizer import  AdamW
+    #from model.optimizer import  LARS
+    #optimizer = LARS(model.parameters(), init_lr,
+                         #weight_decay=args.weight_decay,
+                         #momentum=args.momentum)
+    from model.optimizer import  AdamW
 
-    #optimizer = AdamW(model.parameters(),args.lr,betas=(0.9, 0.999),eps=1e-8,weight_decay=args.weight_decay)
+    optimizer = AdamW(model.parameters(),args.lr,betas=(0.9, 0.999),eps=1e-8,weight_decay=args.weight_decay)
     model.cuda()
     Memory_Bank.cuda()
 
