@@ -18,6 +18,8 @@ from ops.os_operation import mkdir, mkdir_rank
 from training.train_utils import adjust_learning_rate2,save_checkpoint
 from data_processing.loader import TwoCropsTransform, TwoCropsTransform2,GaussianBlur,Solarize
 from ops.knn_monitor import knn_monitor
+from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 def init_log_path(args,batch_size):
     """
     :param args:
@@ -64,31 +66,11 @@ def main_worker(gpu, ngpus_per_node, args):
     print("init lr",init_lr," init batch size",args.batch_size)
     #args.memory_lr = args.memory_lr * args.batch_size / 256
     # suppress printing if not master
-    if args.multiprocessing_distributed and args.gpu != 0:
-        def print_pass(*args):
-            pass
-        builtins.print = print_pass
+
 
     if args.gpu is not None:
         print("Use GPU: {} for training".format(args.gpu))
-
-    if args.distributed:
-        if args.dist_url == "env://" and args.rank == -1:
-                args.rank = int(os.environ["RANK"])
-        if args.multiprocessing_distributed:
-                # For multiprocessing distributed training, rank needs to be the
-                # global rank among all the processes
-            args.rank = args.rank * ngpus_per_node + gpu#we only need to give rank to this machine, then it's enough
-            #world size in multi node specified the number of total nodes
-        dist.init_process_group(backend=args.dist_backend, init_method=args.dist_url,
-                                world_size=args.world_size, rank=args.rank)
         
-        if args.nodes_num>1:
-            args.batch_size = args.batch_size // args.nodes_num
-            args.knn_batch_size = args.knn_batch_size // args.nodes_num
-            args.workers = args.workers//args.nodes_num
-            torch.distributed.barrier()
-    
     print("rank ",args.rank)
     # create model
     print("=> creating model '{}'".format(args.arch))
@@ -111,37 +93,9 @@ def main_worker(gpu, ngpus_per_node, args):
     #from model.optimizer import  AdamW
 
     #optimizer = AdamW(model.parameters(),args.lr,betas=(0.9, 0.999),eps=1e-8,weight_decay=args.weight_decay)
-    if args.distributed:
-        # For multiprocessing distributed, DistributedDataParallel constructor
-        # should always set the single device scope, otherwise,
-        # DistributedDataParallel will use all available devices.
-        if args.gpu is not None:
-            torch.cuda.set_device(args.gpu)
-            model.cuda(args.gpu)
-            # When using a single GPU per process and per
-            # DistributedDataParallel, we need to divide the batch size
-            # ourselves based on the total number of GPUs we have
-            args.batch_size = int(args.batch_size / ngpus_per_node)
-            args.workers = int((args.workers + ngpus_per_node - 1) / ngpus_per_node)
-            args.knn_batch_size =int(args.knn_batch_size / ngpus_per_node) 
-            model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu],find_unused_parameters=True)
-            Memory_Bank = Memory_Bank.cuda(args.gpu)
-        else:
-            model.cuda()
-            Memory_Bank.cuda()
-            # DistributedDataParallel will divide and allocate batch_size to all
-            # available GPUs if device_ids are not set
-            model = torch.nn.parallel.DistributedDataParallel(model,find_unused_parameters=True)
-    elif args.gpu is not None:
-        torch.cuda.set_device(args.gpu)
-        model = model.cuda(args.gpu)
-        Memory_Bank=Memory_Bank.cuda(args.gpu)
-        # comment out the following line for debugging
-        raise NotImplementedError("Only DistributedDataParallel is supported.")
-    else:
-        # AllGather implementation (batch shuffle, queue update, etc.) in
-        # this code only supports DistributedDataParallel.
-        raise NotImplementedError("Only DistributedDataParallel is supported.")
+    model.cuda()
+    Memory_Bank.cuda()
+
     print("per gpu batch size: ",args.batch_size)
     print("current workers:",args.workers)
     # define loss function (criterion) and optimizer
@@ -234,26 +188,13 @@ def main_worker(gpu, ngpus_per_node, args):
         print("We only support ImageNet dataset currently")
         exit()
 
-    if args.distributed:
-        train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset, shuffle=True)
-        val_sampler = torch.utils.data.distributed.DistributedSampler(val_dataset)
-        test_sampler = torch.utils.data.distributed.DistributedSampler(test_dataset)
-    else:
-        train_sampler = None
-        val_sampler = None
-        test_sampler = None
+    train_sampler = RandomSampler(train_dataset)  # For shuffling the training dataset
+    val_sampler = SequentialSampler(val_dataset)  # No shuffling for validation
+    test_sampler = SequentialSampler(test_dataset)
 
-    train_loader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=args.batch_size, shuffle=(train_sampler is None),
-        num_workers=args.workers, pin_memory=True, sampler=train_sampler, drop_last=True)
-
-    val_loader = torch.utils.data.DataLoader(
-        val_dataset, batch_size=args.knn_batch_size, shuffle=False,
-        num_workers=args.workers, pin_memory=True, sampler=val_sampler, drop_last=False)
-    test_loader = torch.utils.data.DataLoader(
-        test_dataset, batch_size=args.knn_batch_size, shuffle=False,
-        num_workers=args.workers, pin_memory=True, sampler=test_sampler, drop_last=False)
-
+    train_loader = DataLoader(train_dataset, shuffle=True, batch_size=args.batch_size,sampler=train_sampler,pin_memory=True,num_workers=args.workers,drop_last=True)
+    val_loader = DataLoader(val_dataset, shuffle=False, batch_size=args.knn_batch_size,sampler=val_sampler,pin_memory=True,num_workers=args.workers,drop_last=False)
+    test_loader = DataLoader(test_dataset, shuffle=False, batch_size=args.knn_batch_size,sampler=test_sampler,pin_memory=True,num_workers=args.workers,drop_last=False)
 
     #init weight for memory bank
     bank_size=args.cluster
@@ -271,8 +212,6 @@ def main_worker(gpu, ngpus_per_node, args):
     best_Acc=0
     for epoch in range(args.start_epoch, args.epochs):
 
-        if args.distributed:
-            train_sampler.set_epoch(epoch)
         #adjust_learning_rate(optimizer, epoch, args)
         adjust_learning_rate2(optimizer, epoch, args, init_lr)    
         #if args.type<10:
