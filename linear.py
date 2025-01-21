@@ -168,7 +168,7 @@ def main_worker(gpu, ngpus_per_node, args):
             state_dict = checkpoint['state_dict']
             for k in list(state_dict.keys()):
                 # retain only encoder_q up to before the embedding layer
-                if k.startswith('module.encoder_q') and not k.startswith('module.encoder_q.fc'):
+                if k.startswith('encoder_q') and not k.startswith('encoder_q.fc'):
                     # remove prefix
                     state_dict[k[len("module.encoder_q."):]] = state_dict[k]
                     del state_dict[k]
