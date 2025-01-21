@@ -16,8 +16,7 @@ parser.add_argument('-a', '--arch', metavar='ARCH', default='resnet50',
                         ' | '.join(model_names) +
                         ' (default: resnet50)')
 def main():
-    args = parser.parse_args()
-    model = models.__dict__[args.arch]  # Example: ResNet18
+    args = parser.parse_args()  
     model = models.__dict__[args.arch](pretrained=False)
     model.eval()  # Set the model to evaluation mode
     for param in model.parameters():
