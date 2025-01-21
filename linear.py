@@ -283,7 +283,6 @@ def main_worker(gpu, ngpus_per_node, args):
         ]))
     transform_test = transforms.Compose([
         transforms.Resize(32),
-        transforms.CenterCrop(224),
         transforms.ToTensor(),
         normalize,
     ])
