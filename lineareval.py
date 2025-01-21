@@ -61,7 +61,7 @@ def main():
     
     # Define loss function and optimizer
     criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.SGD(parameters, init_lr,
+    optimizer = torch.optim.SGD(model.fc.parameters(), init_lr,
                                 momentum=args.momentum,
                                 weight_decay=args.weight_decay)
     print("=> use LARS optimizer.")
