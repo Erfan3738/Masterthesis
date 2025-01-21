@@ -20,7 +20,7 @@ parser.add_argument('--wd', '--weight-decay', default=0., type=float,
                     dest='weight_decay')
 parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
                     help='momentum')
-parser.add_argument('--lr', '--learning-rate', default=0.1, type=float,
+parser.add_argument('--lr', '--learning-rate', default=30, type=float,
                     metavar='LR', help='initial (base) learning rate', dest='lr')
 
 def main():
