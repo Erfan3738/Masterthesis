@@ -20,6 +20,8 @@ parser.add_argument('--wd', '--weight-decay', default=0., type=float,
                     dest='weight_decay')
 parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
                     help='momentum')
+parser.add_argument('--lr', '--learning-rate', default=0.1, type=float,
+                    metavar='LR', help='initial (base) learning rate', dest='lr')
 
 def main():
     args = parser.parse_args()  
@@ -61,7 +63,7 @@ def main():
     
     # Define loss function and optimizer
     criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.SGD(model.fc.parameters(), init_lr,
+    optimizer = torch.optim.SGD(model.fc.parameters(), args.lr,
                                 momentum=args.momentum,
                                 weight_decay=args.weight_decay)
     print("=> use LARS optimizer.")
