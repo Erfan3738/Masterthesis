@@ -25,7 +25,8 @@ parser.add_argument('--lr', '--learning-rate', default=30, type=float,
 
 def main():
     args = parser.parse_args()  
-    model = models.__dict__[args.arch](pretrained=False)
+    num_classes = 10
+    model = models.__dict__[args.arch](pretrained=False,num_classes = 10)
     model.eval()  # Set the model to evaluation mode
     for param in model.parameters():
         param.requires_grad = False
