@@ -15,6 +15,12 @@ parser.add_argument('-a', '--arch', metavar='ARCH', default='resnet50',
                     help='model architecture: ' +
                         ' | '.join(model_names) +
                         ' (default: resnet50)')
+parser.add_argument('--wd', '--weight-decay', default=0., type=float,
+                    metavar='W', help='weight decay (default: 0.)',
+                    dest='weight_decay')
+parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
+                    help='momentum')
+
 def main():
     args = parser.parse_args()  
     model = models.__dict__[args.arch](pretrained=False)
@@ -29,14 +35,21 @@ def main():
     from torch.utils.data import DataLoader
     
     # Define transformations
-    transform = transforms.Compose([
+    transform1 = transforms.Compose([
+        transforms.RandomResizedCrop(32),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.247, 0.243, 0.261))  # CIFAR-10 mean and std
+    ])
+    transform2 = transforms.Compose([
+        transforms.RandomResizedCrop(32),
         transforms.ToTensor(),
         transforms.Normalize((0.4914, 0.4822, 0.4465), (0.247, 0.243, 0.261))  # CIFAR-10 mean and std
     ])
     
     # Load CIFAR-10 dataset
-    train_dataset = datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
-    test_dataset = datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
+    train_dataset = datasets.CIFAR10(root='./data', train=True, download=True, transform=transform1)
+    test_dataset = datasets.CIFAR10(root='./data', train=False, download=True, transform=transform2)
     
     # Create data loaders
     train_loader = DataLoader(train_dataset, batch_size=128, shuffle=True, num_workers=2)
@@ -48,9 +61,12 @@ def main():
     
     # Define loss function and optimizer
     criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.SGD(model.fc.parameters(), 0.1,
-                                0.99,
-                                0.)  # Only optimize the final layer
+    optimizer = torch.optim.SGD(parameters, init_lr,
+                                momentum=args.momentum,
+                                weight_decay=args.weight_decay)
+    print("=> use LARS optimizer.")
+    from ops.LARS import SGD_LARC
+    optimizer = SGD_LARC(optimizer, trust_coefficient=0.001, clip=False, eps=1e-8)
     
     # Training loop
     num_epochs = 10
