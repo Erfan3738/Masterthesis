@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import model.ResNet as models
 import argparse
+import torchvision.models as models
 
 model_names = sorted(name for name in models.__dict__
     if name.islower() and not name.startswith("__")
@@ -17,7 +18,7 @@ parser.add_argument('-a', '--arch', metavar='ARCH', default='resnet50',
 def main():
     args = parser.parse_args()
     model = models.__dict__[args.arch]  # Example: ResNet18
-    model.load_state_dict(torch.load('args.pretrained'))
+    model = models.__dict__[args.arch](pretrained=False)
     model.eval()  # Set the model to evaluation mode
     for param in model.parameters():
         param.requires_grad = False
