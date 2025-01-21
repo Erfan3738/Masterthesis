@@ -48,7 +48,9 @@ def main():
     
     # Define loss function and optimizer
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.fc.parameters(), lr=0.001)  # Only optimize the final layer
+    optimizer = torch.optim.SGD(model.fc.parameters(), 0.1,
+                                0.99,
+                                0.)  # Only optimize the final layer
     
     # Training loop
     num_epochs = 10
