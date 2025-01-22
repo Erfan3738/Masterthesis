@@ -98,16 +98,16 @@ class CaCo(nn.Module):
         with torch.no_grad():  # no gradient to keys
                
             self._momentum_update_key_encoder_param(moco_momentum)
-            im_k_, idx_unshuffle1 = self._batch_shuffle_single_gpu(im_k)
-            im_q_, idx_unshuffle2 = self._batch_shuffle_single_gpu(im_q)
-            q = self.encoder_k(im_q_, use_feature=False)  # keys: NxC
+            
+            
+            q = self.encoder_k(im_q, use_feature=False)  # keys: NxC
             q = nn.functional.normalize(q, dim=1)
-            q = self._batch_unshuffle_single_gpu(q, idx_unshuffle2)
+            
             q = q.detach()
 
-            k = self.encoder_k(im_k_, use_feature=False)  # keys: NxC
+            k = self.encoder_k(im_k, use_feature=False)  # keys: NxC
             k = nn.functional.normalize(k, dim=1)
-            k = self._batch_unshuffle_single_gpu(k, idx_unshuffle1)
+            
             k = k.detach()
 
         return q_pred, k_pred, q, k
