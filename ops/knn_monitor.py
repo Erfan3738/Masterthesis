@@ -7,6 +7,8 @@ def knn_monitor(net, memory_data_loader, test_data_loader,
                 global_k=200,pool_ops=True,temperature=0.2,
                 vit_backbone=False):
     net.eval()
+    device = xm.xla_device()
+    net = net.to(device)
     classes = len(memory_data_loader.dataset.classes)
     total_top1, total_top5, total_num, feature_bank = 0.0, 0.0, 0, []
     feature_labels=[]
@@ -15,7 +17,7 @@ def knn_monitor(net, memory_data_loader, test_data_loader,
         # generate feature bank
         for k,(data, target) in enumerate(memory_data_loader):
 
-            target = target.cuda(non_blocking=True)
+            target = target.to(device)
             if vit_backbone:
                 feature = net(data.cuda(non_blocking=True),feature_only=True)
             else:
@@ -41,7 +43,7 @@ def knn_monitor(net, memory_data_loader, test_data_loader,
         # loop test data to predict the label by weighted knn search
         test_bar = enumerate(test_data_loader)
         for  k,(data, target) in test_bar:
-            data, target = data.cuda(non_blocking=True), target.cuda(non_blocking=True)
+            data, target = data.to(device), target.to(device)
             if vit_backbone:
                 feature = net(data, feature_only=True)
             else:
@@ -59,6 +61,7 @@ def knn_monitor(net, memory_data_loader, test_data_loader,
             total_top1 += (pred_labels[:, 0] == target).float().sum().item()
             print("current eval feature size: ",feature.size())
             print({'#KNN monitor Accuracy': total_top1 / total_num * 100})
+            xm.mark_step()
     del feature_bank
     del feature_labels
     return total_top1 / total_num * 100
