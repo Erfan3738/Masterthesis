@@ -21,6 +21,7 @@ from ops.knn_monitor import knn_monitor
 from torch.utils.data import DataLoader
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 import torch_xla.core.xla_model as xm
+import torch_xla.distributed.parallel_loader as pl
 def init_log_path(args,batch_size):
     """
     :param args:
