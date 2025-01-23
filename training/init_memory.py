@@ -26,7 +26,7 @@ from training.train_utils import AverageMeter, ProgressMeter, accuracy
 
 def init_memory(train_loader, model,Memory_Bank, criterion,
                                 optimizer,epoch, args):
-    
+     device = xm.xla_device()
     losses = AverageMeter('Loss', ':.4e')
     top1 = AverageMeter('Acc@1', ':6.2f')
     top5 = AverageMeter('Acc@5', ':6.2f')
@@ -36,11 +36,11 @@ def init_memory(train_loader, model,Memory_Bank, criterion,
         prefix="Init Epoch: [{}]".format(epoch))
     # switch to train mode
     model.train()
+    train_loader = pl.ParallelLoader(train_loader, [device]).per_device_loader(device)
+    
     for i, (images, _) in enumerate(train_loader):
         # measure data loading time
-        if args.gpu is not None:
-            for k in range(len(images)):
-                images[k] = images[k].cuda(args.gpu, non_blocking=True)
+        images = [img.to(device) for img in images]
         
         # compute output
         q, _, _, k  = model(im_q=images[0], im_k=images[1])
@@ -51,7 +51,7 @@ def init_memory(train_loader, model,Memory_Bank, criterion,
 
         logits = torch.cat([l_pos, l_neg], dim=1)
         logits /= 0.2#using the default param in MoCo temperature
-        labels = torch.zeros(logits.shape[0], dtype=torch.long).cuda(args.gpu)
+        labels = torch.zeros(logits.shape[0], dtype=torch.long).to(device)
         loss = criterion(logits, labels)
         # compute gradient and do SGD step
         optimizer.zero_grad()
@@ -86,3 +86,5 @@ def init_memory(train_loader, model,Memory_Bank, criterion,
     for param_q, param_k in zip(model.encoder_q.parameters(),
                                 model.encoder_k.parameters()):
         param_k.data.copy_(param_q.data)  # initialize
+
+     xm.mark_step()
