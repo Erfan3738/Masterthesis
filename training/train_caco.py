@@ -27,6 +27,7 @@ from training.train_utils import AverageMeter, ProgressMeter, accuracy
 def update_multicrop_network(model, images, args, Memory_Bank,
                        losses, top1, top5, optimizer, criterion, mem_losses,
                        moco_momentum, memory_lr, cur_adco_t):
+    images = [img.to(device) for img in images]
     model.zero_grad()
     q_list, k_list = model(im_q=images[1:], im_k=images[0], run_type=1, moco_momentum=moco_momentum)
     pred_list = []
@@ -138,6 +139,7 @@ def update_multicrop_network(model, images, args, Memory_Bank,
 def update_sym_network(model, images, args, Memory_Bank, 
                    losses, top1, top5, optimizer, criterion, mem_losses,
                    moco_momentum,memory_lr,cur_adco_t):
+    images = [img.to(device) for img in images]
     model.zero_grad()
     q_pred, k_pred, q, k = model(im_q=images[0], im_k=images[1],run_type=0,moco_momentum=moco_momentum)
     
@@ -179,7 +181,7 @@ def update_sym_network(model, images, args, Memory_Bank,
     # compute gradient and do SGD step
     optimizer.zero_grad()
     loss.backward()
-    optimizer.step()
+    xm.optimizer_step(optimizer)
     # update memory bank
     with torch.no_grad():
         # update memory bank
@@ -215,6 +217,7 @@ def update_sym_network(model, images, args, Memory_Bank,
         posi_prob = logits[torch.arange(logits.shape[0]), filter_index1]
         posi_prob = torch.mean(posi_prob)
         mem_losses.update(posi_prob.item(), logits.size(0))
+    xm.mark_step()
     return logits2,logits1
 
 
@@ -333,7 +336,7 @@ def train_caco(train_loader, model, Memory_Bank, criterion,
 
         if args.gpu is not None:
             for k in range(len(images)):
-                images[k] = images[k].cuda(args.gpu, non_blocking=True)
+                images[k] = images[k].to(device)
         batch_size = images[0].size(0)
         if args.multi_crop:
             update_multicrop_network(model, images, args, Memory_Bank, losses, top1, top5,
@@ -350,6 +353,7 @@ def train_caco(train_loader, model, Memory_Bank, criterion,
             progress.display(i)
             if args.rank == 0:
                 progress.write(train_log_path, i)
+    xm.mark_step()
     return top1.avg
 
 
