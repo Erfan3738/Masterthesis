@@ -87,4 +87,4 @@ def init_memory(train_loader, model,Memory_Bank, criterion,
                                 model.encoder_k.parameters()):
         param_k.data.copy_(param_q.data)  # initialize
 
-     xm.mark_step()
+    xm.mark_step()
