@@ -21,7 +21,7 @@ def main(args):
         mp.spawn(main_worker, nprocs=ngpus_per_node, args=(ngpus_per_node, args))
     else:
         # Simply call main_worker function
-        main_worker(args.gpu, ngpus_per_node, args)
+        main_worker(args)
 if __name__ == '__main__':
     #use_cuda = torch.cuda.is_available()
     #print("starting check cuda status",use_cuda)
