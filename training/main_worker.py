@@ -20,6 +20,7 @@ from data_processing.loader import TwoCropsTransform, TwoCropsTransform2,Gaussia
 from ops.knn_monitor import knn_monitor
 from torch.utils.data import DataLoader
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
+import torch_xla.core.xla_model as xm
 def init_log_path(args,batch_size):
     """
     :param args:
@@ -93,8 +94,9 @@ def main_worker(gpu, ngpus_per_node, args):
     #from model.optimizer import  AdamW
 
     #optimizer = AdamW(model.parameters(),args.lr,betas=(0.9, 0.999),eps=1e-8,weight_decay=args.weight_decay)
-    model.cuda()
-    Memory_Bank.cuda()
+    device = xm.xla_device()
+    model = model.to(device)
+    Memory_Bank= Memory_Bank.to(device)
 
     print("per gpu batch size: ",args.batch_size)
     print("current workers:",args.workers)
