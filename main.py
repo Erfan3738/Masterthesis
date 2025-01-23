@@ -9,7 +9,7 @@ import torch.multiprocessing as mp
 def main(args):
 
     #config environment
-    ngpus_per_node=Config_Environment(args)
+    
     from training.main_worker import main_worker
     # call training main control function
     if args.multiprocessing_distributed==1:
