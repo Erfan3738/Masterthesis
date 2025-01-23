@@ -27,7 +27,7 @@ from training.train_utils import AverageMeter, ProgressMeter, accuracy
 def update_multicrop_network(model, images, args, Memory_Bank,
                        losses, top1, top5, optimizer, criterion, mem_losses,
                        moco_momentum, memory_lr, cur_adco_t):
-    images = [img.to(device) for img in images]
+   
     model.zero_grad()
     q_list, k_list = model(im_q=images[1:], im_k=images[0], run_type=1, moco_momentum=moco_momentum)
     pred_list = []
@@ -139,7 +139,7 @@ def update_multicrop_network(model, images, args, Memory_Bank,
 def update_sym_network(model, images, args, Memory_Bank, 
                    losses, top1, top5, optimizer, criterion, mem_losses,
                    moco_momentum,memory_lr,cur_adco_t):
-    images = [img.to(device) for img in images]
+    
     model.zero_grad()
     q_pred, k_pred, q, k = model(im_q=images[0], im_k=images[1],run_type=0,moco_momentum=moco_momentum)
     
@@ -353,7 +353,7 @@ def train_caco(train_loader, model, Memory_Bank, criterion,
             progress.display(i)
             if args.rank == 0:
                 progress.write(train_log_path, i)
-    xm.mark_step()
+    
     return top1.avg
 
 
