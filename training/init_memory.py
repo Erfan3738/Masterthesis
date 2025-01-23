@@ -20,7 +20,8 @@ import torch.utils.data.distributed
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 import torchvision.models as models
-
+import torch_xla.core.xla_model as xm
+import torch_xla.distributed.parallel_loader as pl
 from training.train_utils import AverageMeter, ProgressMeter, accuracy
 
 def init_memory(train_loader, model,Memory_Bank, criterion,
@@ -55,7 +56,7 @@ def init_memory(train_loader, model,Memory_Bank, criterion,
         # compute gradient and do SGD step
         optimizer.zero_grad()
         loss.backward()
-        optimizer.step()
+       xm.optimizer_step(optimizer) 
         
         acc1, acc5 = accuracy(logits, labels, topk=(1, 5))
         
@@ -75,6 +76,8 @@ def init_memory(train_loader, model,Memory_Bank, criterion,
         
         if (i+1) * batch_size >= args.cluster:
             break
+
+        xm.mark_step()
     #if args.nodes_num>1:
     #    for param_q, param_k in zip(model.encoder_q.parameters(),
     #                            model.encoder_k.parameters()):
