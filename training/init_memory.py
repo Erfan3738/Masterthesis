@@ -36,7 +36,7 @@ def init_memory(train_loader, model,Memory_Bank, criterion,
         prefix="Init Epoch: [{}]".format(epoch))
     # switch to train mode
     model.train()
-    train_loader = pl.ParallelLoader(train_loader, [device]).per_device_loader(device)
+  
     
     for i, (images, _) in enumerate(train_loader):
         # measure data loading time
