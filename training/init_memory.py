@@ -26,7 +26,7 @@ from training.train_utils import AverageMeter, ProgressMeter, accuracy
 
 def init_memory(train_loader, model,Memory_Bank, criterion,
                                 optimizer,epoch, args):
-     device = xm.xla_device()
+    device = xm.xla_device()
     losses = AverageMeter('Loss', ':.4e')
     top1 = AverageMeter('Acc@1', ':6.2f')
     top5 = AverageMeter('Acc@5', ':6.2f')
