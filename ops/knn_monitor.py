@@ -200,6 +200,7 @@ def knn_predict(feature, feature_bank, feature_labels, classes, knn_k,knn_t=None
     pred_scores = torch.sum(one_hot_label.view(feature.size(0), -1, classes) * sim_weight.unsqueeze(dim=-1), dim=1)
 
     pred_labels = pred_scores.argsort(dim=-1, descending=True)
+    xm.mark_step()
     return pred_labels
 
 def knn_monitor_horovod(net, memory_data_loader, test_data_loader,
