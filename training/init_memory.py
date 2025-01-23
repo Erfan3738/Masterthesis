@@ -56,7 +56,7 @@ def init_memory(train_loader, model,Memory_Bank, criterion,
         # compute gradient and do SGD step
         optimizer.zero_grad()
         loss.backward()
-       xm.optimizer_step(optimizer) 
+        xm.optimizer_step(optimizer) 
         
         acc1, acc5 = accuracy(logits, labels, topk=(1, 5))
         
