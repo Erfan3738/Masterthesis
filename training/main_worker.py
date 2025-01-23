@@ -60,7 +60,7 @@ def init_log_path(args,batch_size):
 
 def main_worker(gpu, ngpus_per_node, args):
     params = vars(args)
-    args.gpu = gpu
+    
     print(vars(args))
     init_lr = args.lr * args.batch_size / 256
     total_batch_size = args.batch_size
@@ -68,17 +68,11 @@ def main_worker(gpu, ngpus_per_node, args):
     #args.memory_lr = args.memory_lr * args.batch_size / 256
     # suppress printing if not master
 
-
-    if args.gpu is not None:
-        print("Use GPU: {} for training".format(args.gpu))
-        
-    print("rank ",args.rank)
     # create model
     print("=> creating model '{}'".format(args.arch))
 
     Memory_Bank = CaCo_PN(args.cluster,args.moco_dim)
     
-
     model = CaCo(models.__dict__[args.arch], args,
                            args.moco_dim, args.moco_m)
 
@@ -98,10 +92,9 @@ def main_worker(gpu, ngpus_per_node, args):
     model = model.to(device)
     Memory_Bank= Memory_Bank.to(device)
 
-    print("per gpu batch size: ",args.batch_size)
     print("current workers:",args.workers)
     # define loss function (criterion) and optimizer
-    criterion = nn.CrossEntropyLoss().cuda(args.gpu)
+    criterion = nn.CrossEntropyLoss().to(device)
 
     save_path = init_log_path(args,total_batch_size)
     if not args.resume:
@@ -126,7 +119,6 @@ def main_worker(gpu, ngpus_per_node, args):
         else:
             print("=> no checkpoint found at '{}'".format(args.resume))
 
-    cudnn.benchmark = True
 
     # Data loading code
     if args.dataset=='ImageNet':
@@ -194,15 +186,22 @@ def main_worker(gpu, ngpus_per_node, args):
     #val_sampler = SequentialSampler(val_dataset)  # No shuffling for validation
     #test_sampler = SequentialSampler(test_dataset)
 
-    train_loader = DataLoader(train_dataset, shuffle=True, batch_size=args.batch_size,pin_memory=True,num_workers=args.workers,drop_last=True)
-    val_loader = DataLoader(val_dataset, shuffle=True, batch_size=args.knn_batch_size,pin_memory=True,num_workers=args.workers,drop_last=False)
-    test_loader = DataLoader(test_dataset, shuffle=True, batch_size=args.knn_batch_size,pin_memory=True,num_workers=args.workers,drop_last=False)
+    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=args.workers, drop_last=True)
+    val_loader = DataLoader(val_dataset, batch_size=args.knn_batch_size, num_workers=args.workers, drop_last=False)
+    test_loader = DataLoader(test_dataset, batch_size=args.knn_batch_size, num_workers=args.workers, drop_last=False)
+
+    train_loader = pl.ParallelLoader(train_loader, [device]).per_device_loader(device)
+    val_loader = pl.ParallelLoader(val_loader, [device]).per_device_loader(device)
+    test_loader = pl.ParallelLoader(test_loader, [device]).per_device_loader(device)
+
+    #train_loader = DataLoader(train_dataset, shuffle=True, batch_size=args.batch_size,pin_memory=True,num_workers=args.workers,drop_last=True)
+    #val_loader = DataLoader(val_dataset, shuffle=True, batch_size=args.knn_batch_size,pin_memory=True,num_workers=args.workers,drop_last=False)
+    #test_loader = DataLoader(test_dataset, shuffle=True, batch_size=args.knn_batch_size,pin_memory=True,num_workers=args.workers,drop_last=False)
 
     #init weight for memory bank
     bank_size=args.cluster
     print("finished the data loader config!")
-    model.eval()
-    print("gpu consuming before running:", torch.cuda.memory_allocated()/1024/1024)
+    
     #init memory bank
     if args.ad_init and not os.path.isfile(args.resume):
         from training.init_memory import init_memory
@@ -245,7 +244,7 @@ def main_worker(gpu, ngpus_per_node, args):
                 print("small error raised in knn calcu")
                 knn_test_acc=0
 
-            torch.cuda.empty_cache()
+            
             epoch_limit=20
             if knn_test_acc<=1.0 and epoch>=epoch_limit:
                 exit()
