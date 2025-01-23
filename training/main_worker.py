@@ -168,8 +168,8 @@ def main_worker(gpu, ngpus_per_node, args):
     # Data loading code
     if args.dataset=='ImageNet':
         traindir = os.path.join(args.data, 'train')
-        normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                     std=[0.229, 0.224, 0.225])
+        normalize = transforms.Normalize(mean=[0.4914, 0.4822, 0.4465],
+                                     std=[0.2023, 0.1994, 0.2010])
         if args.multi_crop:
             from data_processing.MultiCrop_Transform import Multi_Transform
             multi_transform = Multi_Transform(args.size_crops,
@@ -181,26 +181,26 @@ def main_worker(gpu, ngpus_per_node, args):
         else:
 
             augmentation1 = [
-                    transforms.RandomResizedCrop(224, scale=(0.2, 1.)),
+                    transforms.RandomResizedCrop(32),
                     transforms.RandomApply([
-                        transforms.ColorJitter(0.4, 0.4, 0.2, 0.1)  # not strengthened
+                        transforms.ColorJitter(0.4, 0.4, 0.4, 0.1)  # not strengthened
                     ], p=0.8),
                     transforms.RandomGrayscale(p=0.2),
-                    transforms.RandomApply([GaussianBlur([.1, 2.])], p=1.0),
-                    transforms.RandomHorizontalFlip(),
+                    
+                    transforms.RandomHorizontalFlip(p=0.5),
                     transforms.ToTensor(),
                     normalize
                 ]
 
             augmentation2 = [
-                    transforms.RandomResizedCrop(224, scale=(0.2, 1.)),
+                    transforms.RandomResizedCrop(32),
                     transforms.RandomApply([
-                        transforms.ColorJitter(0.4, 0.4, 0.2, 0.1)  # not strengthened
+                        transforms.ColorJitter(0.4, 0.4, 0.4, 0.1)  # not strengthened
                     ], p=0.8),
                     transforms.RandomGrayscale(p=0.2),
-                    transforms.RandomApply([GaussianBlur([.1, 2.])], p=0.1),
-                    transforms.RandomApply([Solarize()], p=0.2),
-                    transforms.RandomHorizontalFlip(),
+                    
+                    
+                    transforms.RandomHorizontalFlip(p=0.5),
                     transforms.ToTensor(),
                     normalize
                 ]
@@ -211,13 +211,13 @@ def main_worker(gpu, ngpus_per_node, args):
             
         testdir = os.path.join(args.data, 'val')
         transform_test = transforms.Compose([
-            transforms.Resize(256),
-            transforms.CenterCrop(224),
+            
+            
             transforms.ToTensor(),
             normalize,
         ])
         from data_processing.imagenet import imagenet
-        val_dataset = imagenet(traindir, 0.2, transform_test)
+        val_dataset = imagenet(traindir, 1.0, transform_test)
         test_dataset = datasets.ImageFolder(testdir, transform_test)
 
     else:
@@ -225,7 +225,7 @@ def main_worker(gpu, ngpus_per_node, args):
         exit()
 
     if args.distributed:
-        train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
+        train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset,shuffle=True)
         val_sampler = torch.utils.data.distributed.DistributedSampler(val_dataset)
         test_sampler = torch.utils.data.distributed.DistributedSampler(test_dataset)
     else:
