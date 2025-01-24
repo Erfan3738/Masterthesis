@@ -43,7 +43,7 @@ class CaCo(nn.Module):
             dim2 = output_dim if l == num_layers - 1 else mlp_dim
             if l < num_layers - 1:
                mlp.append(nn.Linear(dim1, dim2, bias=False))
-            else
+            else:
                mlp.append(nn.Linear(dim1, dim2, bias=True))
 
             if l < num_layers - 1:
