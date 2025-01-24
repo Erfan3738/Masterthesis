@@ -23,8 +23,8 @@ class CaCo(nn.Module):
         self.encoder_k.maxpool = nn.Identity()
         dim_mlp = self.encoder_q.fc.weight.shape[1]
         # we do not keep 
-        self.encoder_q.fc = self._build_mlp(2,dim_mlp,args.mlp_dim,dim,last_bn=False)
-        self.encoder_k.fc = self._build_mlp(2, dim_mlp, args.mlp_dim, dim,last_bn=False)
+        self.encoder_q.fc = self._build_mlp(2,dim_mlp,args.mlp_dim,dim,last_bn=True)
+        self.encoder_k.fc = self._build_mlp(2, dim_mlp, args.mlp_dim, dim,last_bn=True)
         
         #self.encoder_q.fc = self._build_mlp(2,dim_mlp,args.mlp_dim,dim,last_bn=True)
         #self.encoder_k.fc = self._build_mlp(2, dim_mlp, args.mlp_dim, dim, last_bn=True)
@@ -41,13 +41,11 @@ class CaCo(nn.Module):
         for l in range(num_layers):
             dim1 = input_dim if l == 0 else mlp_dim
             dim2 = output_dim if l == num_layers - 1 else mlp_dim
-            if l < num_layers - 1:
-               mlp.append(nn.Linear(dim1, dim2, bias=False))
-            else:
-               mlp.append(nn.Linear(dim1, dim2, bias=True))
+
+            mlp.append(nn.Linear(dim1, dim2, bias=False))
 
             if l < num_layers - 1:
-                #mlp.append(nn.BatchNorm1d(dim2))
+                mlp.append(nn.BatchNorm1d(dim2))
                 mlp.append(nn.ReLU())
             elif last_bn:
                 # follow SimCLR's design: https://github.com/google-research/simclr/blob/master/model_util.py#L157
