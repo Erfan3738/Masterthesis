@@ -98,7 +98,7 @@ def main_worker(gpu, ngpus_per_node, args):
     model = CaCo(models.__dict__[args.arch], args,
                            args.moco_dim, args.moco_m)
 
-    model = nn.SyncBatchNorm.convert_sync_batchnorm(model)  # use global bn
+    
     from model.optimizer import  LARS
     optimizer = LARS(model.parameters(), init_lr,
                          weight_decay=args.weight_decay,
