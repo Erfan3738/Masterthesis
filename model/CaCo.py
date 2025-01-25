@@ -49,9 +49,9 @@ class CaCo(nn.Module):
                mlp.append(nn.ReLU(inplace=True))
            else:
                mlp.append(nn.Linear(dim1, dim2, bias=True))
-           elif last_ln:
+           
                # Similar to the BatchNorm case, but using LayerNorm
-               mlp.append(nn.LayerNorm(dim2, elementwise_affine=False))  # No learnable parameters
+                 # No learnable parameters
    
        return nn.Sequential(*mlp)
 
