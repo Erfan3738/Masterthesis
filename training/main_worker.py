@@ -119,7 +119,7 @@ def main_worker(args):
         if args.multi_crop:
             from data_processing.MultiCrop_Transform import Multi_Transform
             multi_transform = Multi_Transform([32, 24],
-                                              [2, 4],
+                                              [2, 2],
                                               [1.0, 0.5],
                                               [1.0, 1.0], normalize)
             train_dataset = datasets.ImageFolder(
