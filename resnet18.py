@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torchvision.models as models
+from torchvision.models import resnet
 
 class resnet(nn.Module):
     """
