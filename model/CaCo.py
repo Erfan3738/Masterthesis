@@ -44,7 +44,7 @@ class CaCo(nn.Module):
 
             if l < num_layers - 1:
                 mlp.append(nn.Linear(dim1, dim2, bias=False))
-                mlp.append(nn.LayerNorm(dim2))
+                
                 mlp.append(nn.ReLU(inplace=True))
             else:
                 # follow SimCLR's design: https://github.com/google-research/simclr/blob/master/model_util.py#L157
