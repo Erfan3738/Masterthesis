@@ -55,7 +55,7 @@ def init_log_path(args,batch_size):
     mkdir_rank(save_path,args.rank)
     return save_path
 
-def main_worker(gpu, ngpus_per_node, args):
+def main_worker(args):
     params = vars(args)
     print(vars(args))
     init_lr = args.lr * args.batch_size / 256
