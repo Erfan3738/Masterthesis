@@ -163,7 +163,7 @@ def main_worker(args):
             normalize,
         ])
         from data_processing.imagenet import imagenet
-        val_dataset = imagenet(traindir, 1.0, transform_test)
+        val_dataset = datasets.ImageFolder(traindir, transform_test)
         test_dataset = datasets.ImageFolder(testdir, transform_test)
 
     else:
