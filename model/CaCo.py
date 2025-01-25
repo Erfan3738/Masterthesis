@@ -44,8 +44,8 @@ class CaCo(nn.Module):
            dim2 = output_dim if l == num_layers - 1 else mlp_dim
    
            if l < num_layers - 1:
-               mlp.append(nn.Linear(dim1, dim2, bias=False))
-               mlp.append(nn.LayerNorm(dim2))  # Replace BatchNorm1d with LayerNorm
+               mlp.append(nn.Linear(dim1, dim2, bias=True))
+                 # Replace BatchNorm1d with LayerNorm
                mlp.append(nn.ReLU(inplace=True))
            else:
                mlp.append(nn.Linear(dim1, dim2, bias=True))
