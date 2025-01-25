@@ -18,7 +18,7 @@ class CaCo(nn.Module):
         self.encoder_q = base_encoder(num_classes=dim,norm_layer=nn.LayerNorm)
         #self.encoder_q.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
         #self.encoder_q.maxpool = nn.Identity()
-        self.encoder_k = base_encoder(num_classes=dim,norm_layer=nn.LayerNorm))
+        self.encoder_k = base_encoder(num_classes=dim,norm_layer=nn.LayerNorm)
         #self.encoder_k.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
         #self.encoder_k.maxpool = nn.Identity()
         dim_mlp = self.encoder_q.fc.weight.shape[1]
@@ -44,7 +44,7 @@ class CaCo(nn.Module):
 
             if l < num_layers - 1:
                 mlp.append(nn.Linear(dim1, dim2, bias=False))
-               
+                mlp.append(nn.LayerNorm(dim2))
                 mlp.append(nn.ReLU(inplace=True))
             else:
                 # follow SimCLR's design: https://github.com/google-research/simclr/blob/master/model_util.py#L157
