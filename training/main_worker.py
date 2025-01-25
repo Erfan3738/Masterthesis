@@ -18,6 +18,7 @@ from ops.os_operation import mkdir, mkdir_rank
 from training.train_utils import adjust_learning_rate2,save_checkpoint
 from data_processing.loader import TwoCropsTransform, TwoCropsTransform2,GaussianBlur,Solarize
 from ops.knn_monitor import knn_monitor
+from resnet18 import ResNet18
 def init_log_path(args,batch_size):
     """
     :param args:
@@ -66,7 +67,7 @@ def main_worker(args):
 
     Memory_Bank = CaCo_PN(args.cluster,args.moco_dim)
 
-    model = CaCo(models.__dict__[args.arch], args,
+    model = CaCo(resnet18.ResNet18, args,
                            args.moco_dim, args.moco_m)
     
     optimizer = torch.optim.SGD(model.parameters(), init_lr,
