@@ -4,7 +4,7 @@ import torch.nn as nn
 
 class CaCo(nn.Module):
    
-    def __init__(self, base_encoder,args, dim=128, m=0.999):
+    def __init__(self, base_encoder,args, dim=128, m=0.99):
         """
         dim: feature dimension (default: 128)
         K: queue size; number of negative keys (default: 65536)
@@ -24,8 +24,8 @@ class CaCo(nn.Module):
         self.encoder_k.maxpool = nn.Identity()
         dim_mlp = self.encoder_q.fc.weight.shape[1]
         # we do not keep 
-        self.encoder_q.fc = self._build_mlp(2,dim_mlp,args.mlp_dim,dim,last_bn=True)
-        self.encoder_k.fc = self._build_mlp(2,dim_mlp,args.mlp_dim,dim,last_bn=True)
+        self.encoder_q.fc = self._build_mlp(2,dim_mlp,args.mlp_dim,dim,last_bn=False)
+        self.encoder_k.fc = self._build_mlp(2,dim_mlp,args.mlp_dim,dim,last_bn=False)
         
         #self.encoder_q.fc = self._build_mlp(2,dim_mlp,args.mlp_dim,dim,last_bn=True)
         #self.encoder_k.fc = self._build_mlp(2, dim_mlp, args.mlp_dim, dim, last_bn=True)
