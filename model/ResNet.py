@@ -54,17 +54,18 @@ class BasicBlock(nn.Module):
     ) -> None:
         super(BasicBlock, self).__init__()
         if norm_layer is None:
-            norm_layer = nn.LayerNorm
+            # Default to LayerNorm, reshaped for compatibility with convolutional layers
+            norm_layer = lambda num_features: nn.LayerNorm([num_features, 1, 1])
         if groups != 1 or base_width != 64:
             raise ValueError('BasicBlock only supports groups=1 and base_width=64')
         if dilation > 1:
             raise NotImplementedError("Dilation > 1 not supported in BasicBlock")
         # Both self.conv1 and self.downsample layers downsample the input when stride != 1
         self.conv1 = conv3x3(inplanes, planes, stride)
-        self.bn1 = norm_layer([planes, 32, 32])
+        self.ln1 = norm_layer(planes)
         self.relu = nn.ReLU(inplace=True)
         self.conv2 = conv3x3(planes, planes)
-        self.bn2 = norm_layer([planes, 32, 32])
+        self.ln2 = norm_layer(planes)
         self.downsample = downsample
         self.stride = stride
 
@@ -72,11 +73,11 @@ class BasicBlock(nn.Module):
         identity = x
 
         out = self.conv1(x)
-        out = self.bn1(out)
+        out = self.ln1(out)
         out = self.relu(out)
 
         out = self.conv2(out)
-        out = self.bn2(out)
+        out = self.ln2(out)
 
         if self.downsample is not None:
             identity = self.downsample(x)
@@ -267,11 +268,12 @@ class BN_ResNet(nn.Module):
 
 
 class ResNet(nn.Module):
+
     def __init__(
         self,
         block: Type[Union[BasicBlock, Bottleneck]],
         layers: List[int],
-        num_classes: int = 10,  # CIFAR-10 has 10 classes
+        num_classes: int = 1000,
         zero_init_residual: bool = False,
         groups: int = 1,
         width_per_group: int = 64,
@@ -280,7 +282,7 @@ class ResNet(nn.Module):
     ) -> None:
         super(ResNet, self).__init__()
         if norm_layer is None:
-            norm_layer = nn.LayerNorm
+            norm_layer = lambda num_features: nn.LayerNorm([num_features, 1, 1])
         self._norm_layer = norm_layer
 
         self.inplanes = 64
@@ -289,17 +291,14 @@ class ResNet(nn.Module):
             replace_stride_with_dilation = [False, False, False]
         if len(replace_stride_with_dilation) != 3:
             raise ValueError("replace_stride_with_dilation should be None "
-                            "or a 3-element tuple, got {}".format(replace_stride_with_dilation))
+                             "or a 3-element tuple, got {}".format(replace_stride_with_dilation))
         self.groups = groups
         self.base_width = width_per_group
-
-        # Modify the first convolutional layer for CIFAR-10
-        self.conv1 = nn.Conv2d(3, self.inplanes, kernel_size=3, stride=1, padding=1, bias=False)
-        self.bn1 = norm_layer([self.inplanes, 32, 32])
+        self.conv1 = nn.Conv2d(3, self.inplanes, kernel_size=7, stride=2, padding=3,
+                               bias=False)
+        self.ln1 = norm_layer(self.inplanes)
         self.relu = nn.ReLU(inplace=True)
-        # Remove the initial max-pooling layer
-        self.maxpool = nn.Identity()  # No max-pooling for CIFAR-10
-
+        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
         self.layer1 = self._make_layer(block, 64, layers[0])
         self.layer2 = self._make_layer(block, 128, layers[1], stride=2,
                                        dilate=replace_stride_with_dilation[0])
@@ -310,21 +309,17 @@ class ResNet(nn.Module):
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.fc = nn.Linear(512 * block.expansion, num_classes)
 
-        # Initialize weights
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
-            elif isinstance(m, (nn.LayerNorm, nn.GroupNorm)):
-                nn.init.constant_(m.weight, 1)
-                nn.init.constant_(m.bias, 0)
 
-        # Zero-initialize the last BN in each residual branch
+        # Zero-initialize the last LN in each residual branch
         if zero_init_residual:
             for m in self.modules():
                 if isinstance(m, Bottleneck):
-                    nn.init.constant_(m.bn3.weight, 0)  # type: ignore[arg-type]
+                    nn.init.constant_(m.ln3.weight, 0)
                 elif isinstance(m, BasicBlock):
-                    nn.init.constant_(m.bn2.weight, 0)  # type: ignore[arg-type]
+                    nn.init.constant_(m.ln2.weight, 0)
 
     def _make_layer(self, block: Type[Union[BasicBlock, Bottleneck]], planes: int, blocks: int,
                     stride: int = 1, dilate: bool = False) -> nn.Sequential:
@@ -337,7 +332,7 @@ class ResNet(nn.Module):
         if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.Sequential(
                 conv1x1(self.inplanes, planes * block.expansion, stride),
-                norm_layer([planes * block.expansion, 32, 32]),
+                norm_layer(planes * block.expansion),
             )
 
         layers = []
@@ -351,29 +346,27 @@ class ResNet(nn.Module):
 
         return nn.Sequential(*layers)
 
-    def _forward_impl(self, x: Tensor, use_feature: bool = True) -> Tensor:
+    def _forward_impl(self, x: Tensor, use_feature=True) -> Tensor:
         x = self.conv1(x)
-        x = self.bn1(x)
+        x = self.ln1(x)
         x = self.relu(x)
-        x = self.maxpool(x)  # Identity for CIFAR-10
+        x = self.maxpool(x)
 
         x = self.layer1(x)
         x = self.layer2(x)
         x = self.layer3(x)
         x = self.layer4(x)
-
         if use_feature:
-            return x  # Return features before the final layers
-
+            return x
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
         x = self.fc(x)
 
         return x
 
-    def forward(self, x: Tensor, use_feature: bool = True) -> Tensor:
+    def forward(self, x: Tensor, use_feature=True) -> Tensor:
         return self._forward_impl(x, use_feature=use_feature)
-
+        
 class AlignResNet(nn.Module):
 
     def __init__(
