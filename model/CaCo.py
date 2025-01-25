@@ -36,7 +36,8 @@ class CaCo(nn.Module):
 
         self.K=args.cluster
 
-   def _build_mlp(self, num_layers, input_dim, mlp_dim, output_dim, last_ln=True):
+    def _build_mlp(self, num_layers, input_dim, mlp_dim, output_dim, last_ln=True):
+       
        mlp = []
        for l in range(num_layers):
            dim1 = input_dim if l == 0 else mlp_dim
