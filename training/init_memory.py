@@ -38,8 +38,8 @@ def init_memory(train_loader, model,Memory_Bank, criterion,
     for i, (images, _) in enumerate(train_loader):
         # measure data loading time
         
-          for k in range(len(images)):
-              images[k] = images[k].cuda(non_blocking=True)
+        for k in range(len(images)):
+            images[k] = images[k].cuda(non_blocking=True)
         
         # compute output
         q, _, _, k  = model(im_q=images[0], im_k=images[1])
