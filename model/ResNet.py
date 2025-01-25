@@ -264,13 +264,14 @@ class BN_ResNet(nn.Module):
     def forward(self, x: Tensor) -> Tensor:
         return self._forward_impl(x)
 
-class ResNet(nn.Module):
 
+
+class ResNet(nn.Module):
     def __init__(
         self,
         block: Type[Union[BasicBlock, Bottleneck]],
         layers: List[int],
-        num_classes: int = 1000,
+        num_classes: int = 10,  # CIFAR-10 has 10 classes
         zero_init_residual: bool = False,
         groups: int = 1,
         width_per_group: int = 64,
@@ -285,19 +286,20 @@ class ResNet(nn.Module):
         self.inplanes = 64
         self.dilation = 1
         if replace_stride_with_dilation is None:
-            # each element in the tuple indicates if we should replace
-            # the 2x2 stride with a dilated convolution instead
             replace_stride_with_dilation = [False, False, False]
         if len(replace_stride_with_dilation) != 3:
             raise ValueError("replace_stride_with_dilation should be None "
-                             "or a 3-element tuple, got {}".format(replace_stride_with_dilation))
+                            "or a 3-element tuple, got {}".format(replace_stride_with_dilation))
         self.groups = groups
         self.base_width = width_per_group
-        self.conv1 = nn.Conv2d(3, self.inplanes, kernel_size=7, stride=2, padding=3,
-                               bias=False)
+
+        # Modify the first convolutional layer for CIFAR-10
+        self.conv1 = nn.Conv2d(3, self.inplanes, kernel_size=3, stride=1, padding=1, bias=False)
         self.bn1 = norm_layer(self.inplanes)
         self.relu = nn.ReLU(inplace=True)
-        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        # Remove the initial max-pooling layer
+        self.maxpool = nn.Identity()  # No max-pooling for CIFAR-10
+
         self.layer1 = self._make_layer(block, 64, layers[0])
         self.layer2 = self._make_layer(block, 128, layers[1], stride=2,
                                        dilate=replace_stride_with_dilation[0])
@@ -308,6 +310,7 @@ class ResNet(nn.Module):
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.fc = nn.Linear(512 * block.expansion, num_classes)
 
+        # Initialize weights
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
@@ -315,9 +318,7 @@ class ResNet(nn.Module):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
 
-        # Zero-initialize the last BN in each residual branch,
-        # so that the residual branch starts with zeros, and each residual block behaves like an identity.
-        # This improves the model by 0.2~0.3% according to https://arxiv.org/abs/1706.02677
+        # Zero-initialize the last BN in each residual branch
         if zero_init_residual:
             for m in self.modules():
                 if isinstance(m, Bottleneck):
@@ -350,29 +351,28 @@ class ResNet(nn.Module):
 
         return nn.Sequential(*layers)
 
-    def _forward_impl(self, x: Tensor,use_feature=True) -> Tensor:
-        # See note [TorchScript super()]
+    def _forward_impl(self, x: Tensor, use_feature: bool = True) -> Tensor:
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
-        x = self.maxpool(x)
+        x = self.maxpool(x)  # Identity for CIFAR-10
 
         x = self.layer1(x)
         x = self.layer2(x)
         x = self.layer3(x)
         x = self.layer4(x)
+
         if use_feature:
-            return x
+            return x  # Return features before the final layers
+
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
         x = self.fc(x)
 
         return x
 
-
-    def forward(self, x: Tensor,use_feature=True) -> Tensor:
-        return self._forward_impl(x,use_feature=use_feature)
-
+    def forward(self, x: Tensor, use_feature: bool = True) -> Tensor:
+        return self._forward_impl(x, use_feature=use_feature)
 
 class AlignResNet(nn.Module):
 
