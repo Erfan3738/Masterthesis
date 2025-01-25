@@ -118,10 +118,10 @@ def main_worker(args):
                                      std=[0.2023, 0.1994, 0.2010])
         if args.multi_crop:
             from data_processing.MultiCrop_Transform import Multi_Transform
-            multi_transform = Multi_Transform(args.size_crops,
-                                              args.nmb_crops,
-                                              args.min_scale_crops,
-                                              args.max_scale_crops, normalize)
+            multi_transform = Multi_Transform([32, 24],
+                                              [2, 4],
+                                              [1.0, 0.5],
+                                              [1.0, 1.0], normalize)
             train_dataset = datasets.ImageFolder(
                 traindir, multi_transform)
         else:
