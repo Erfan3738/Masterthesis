@@ -11,7 +11,7 @@ class resnet(nn.Module):
     (ii) removes pool1
     """
     def __init__(self, feature_dim=128, arch=None, bn_splits=16):
-        super(ModelBase, self).__init__()
+        super(resnet, self).__init__()
 
         # use split batchnorm
         norm_layer =  nn.BatchNorm2d
