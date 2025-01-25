@@ -331,9 +331,9 @@ def train_caco(train_loader, model, Memory_Bank, criterion,
         # measure data loading time
         data_time.update(time.time() - end)
 
-        if args.gpu is not None:
-            for k in range(len(images)):
-                images[k] = images[k].cuda(args.gpu, non_blocking=True)
+        
+          for k in range(len(images)):
+              images[k] = images[k].cuda(non_blocking=True)
         batch_size = images[0].size(0)
         if args.multi_crop:
             update_multicrop_network(model, images, args, Memory_Bank, losses, top1, top5,
