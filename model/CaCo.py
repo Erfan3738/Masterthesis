@@ -23,8 +23,8 @@ class CaCo(nn.Module):
         self.encoder_k.maxpool = nn.Identity()
         dim_mlp = self.encoder_q.fc.weight.shape[1]
         # we do not keep 
-        self.encoder_q.fc = self._build_mlp(2,dim_mlp,args.mlp_dim,dim,last_bn=True)
-        self.encoder_k.fc = self._build_mlp(2, dim_mlp, args.mlp_dim, dim,last_bn=True)
+        self.encoder_q.fc = self._build_mlp(2,dim_mlp,args.mlp_dim,dim,last_ln=True)
+        self.encoder_k.fc = self._build_mlp(2, dim_mlp, args.mlp_dim, dim,last_ln=True)
         
         #self.encoder_q.fc = self._build_mlp(2,dim_mlp,args.mlp_dim,dim,last_bn=True)
         #self.encoder_k.fc = self._build_mlp(2, dim_mlp, args.mlp_dim, dim, last_bn=True)
@@ -36,22 +36,23 @@ class CaCo(nn.Module):
 
         self.K=args.cluster
 
-    def _build_mlp(self, num_layers, input_dim, mlp_dim, output_dim, last_bn=True):
-        mlp = []
-        for l in range(num_layers):
-            dim1 = input_dim if l == 0 else mlp_dim
-            dim2 = output_dim if l == num_layers - 1 else mlp_dim
+   def _build_mlp(self, num_layers, input_dim, mlp_dim, output_dim, last_ln=True):
+       mlp = []
+       for l in range(num_layers):
+           dim1 = input_dim if l == 0 else mlp_dim
+           dim2 = output_dim if l == num_layers - 1 else mlp_dim
+   
+           mlp.append(nn.Linear(dim1, dim2, bias=False))
+   
+           if l < num_layers - 1:
+               mlp.append(nn.LayerNorm(dim2))  # Replace BatchNorm1d with LayerNorm
+               mlp.append(nn.ReLU(inplace=True))
+           elif last_ln:
+               # Similar to the BatchNorm case, but using LayerNorm
+               mlp.append(nn.LayerNorm(dim2, elementwise_affine=False))  # No learnable parameters
+   
+       return nn.Sequential(*mlp)
 
-            if l < num_layers - 1:
-                mlp.append(nn.Linear(dim1, dim2, bias=False))
-                
-                mlp.append(nn.ReLU(inplace=True))
-            else:
-                # follow SimCLR's design: https://github.com/google-research/simclr/blob/master/model_util.py#L157
-                # for simplicity, we further removed gamma in BN
-                mlp.append(nn.Linear(dim1, dim2, bias=True))
-
-        return nn.Sequential(*mlp)
 
     @torch.no_grad()
     def _momentum_update_key_encoder(self):
