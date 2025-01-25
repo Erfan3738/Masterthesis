@@ -4,7 +4,7 @@ import torchvision.models as models
 
 class ResNet18(nn.Module):
     def __init__(self, pretrained=False):
-        super(ResNet18Features, self).__init__()
+        super(ResNet18, self).__init__()
         # Load the ResNet-18 model from torchvision
         self.resnet18 = models.resnet18(pretrained=pretrained)
         
