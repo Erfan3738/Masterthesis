@@ -8,19 +8,18 @@ class Multi_Transform(object):
             size_crops,
             nmb_crops,
             min_scale_crops,
-            max_scale_crops,normalize,init_size=224):
+            max_scale_crops,normalize,init_size=32):
         assert len(size_crops) == len(nmb_crops)
         assert len(min_scale_crops) == len(nmb_crops)
         assert len(max_scale_crops) == len(nmb_crops)
         trans=[]
         #image_k
         weak = transforms.Compose([
-            transforms.RandomResizedCrop(init_size, scale=(0.14, 1.)),
+            transforms.RandomResizedCrop(init_size),
             transforms.RandomApply([
                 transforms.ColorJitter(0.4, 0.4, 0.4, 0.1)  # not strengthened
             ], p=0.8),
             transforms.RandomGrayscale(p=0.2),
-            transforms.RandomApply([GaussianBlur([.1, 2.])], p=0.5),
             transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
             normalize
@@ -43,7 +42,6 @@ class Multi_Transform(object):
                 transforms.ColorJitter(0.4, 0.4, 0.4, 0.1)  # not strengthened
             ], p=0.8),
             transforms.RandomGrayscale(p=0.2),
-            transforms.RandomApply([GaussianBlur([.1, 2.])], p=0.5),
             transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
             normalize
