@@ -70,14 +70,14 @@ def main_worker(args):
     model = CaCo(resnet18.ResNet18, args,
                            args.moco_dim, args.moco_m)
     
-    optimizer = torch.optim.SGD(model.parameters(), init_lr,
-                                momentum=args.momentum,
-                                weight_decay=args.weight_decay)
-  # use global bn
-    #from model.optimizer import  LARS
-    #optimizer = LARS(model.parameters(), init_lr,
-                         #weight_decay=args.weight_decay,
-                         #momentum=args.momentum)
+    #optimizer = torch.optim.SGD(model.parameters(), init_lr,
+                                #momentum=args.momentum,
+                                #weight_decay=args.weight_decay)
+ 
+    from model.optimizer import  LARS
+    optimizer = LARS(model.parameters(), init_lr,
+                         weight_decay=args.weight_decay,
+                         momentum=args.momentum)
     model.cuda()
     Memory_Bank.cuda()
     print("per gpu batch size: ",args.batch_size)
