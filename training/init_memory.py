@@ -66,12 +66,12 @@ def init_memory(train_loader, model,Memory_Bank, criterion,
             progress.display(i)
 
         
-        output = concat_all_gather(k)
+        
        
-        batch_size = output.size(0)
+        batch_size = k.size(0)
         start_point = i * batch_size
         end_point = min((i + 1) * batch_size, args.cluster)
-        Memory_Bank.W.data[:, start_point:end_point] = output[:end_point - start_point].T
+        Memory_Bank.W.data[:, start_point:end_point] = k[:end_point - start_point].T
         
         if (i+1) * batch_size >= args.cluster:
             break
@@ -80,18 +80,6 @@ def init_memory(train_loader, model,Memory_Bank, criterion,
     #                            model.encoder_k.parameters()):
     #        param_k.data.copy_(param_q.data)  # initialize
     #else:
-    for param_q, param_k in zip(model.module.encoder_q.parameters(),
-                                model.module.encoder_k.parameters()):
+    for param_q, param_k in zip(model.encoder_q.parameters(),
+                                model.encoder_k.parameters()):
         param_k.data.copy_(param_q.data)  # initialize
-@torch.no_grad()
-def concat_all_gather(tensor):
-    """
-    Performs all_gather operation on the provided tensors.
-    *** Warning ***: torch.distributed.all_gather has no gradient.
-    """
-    tensors_gather = [torch.ones_like(tensor)
-        for _ in range(torch.distributed.get_world_size())]
-    torch.distributed.all_gather(tensors_gather, tensor, async_op=False)
-
-    output = torch.cat(tensors_gather, dim=0)
-    return output
