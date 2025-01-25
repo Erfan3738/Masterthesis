@@ -61,10 +61,10 @@ class BasicBlock(nn.Module):
             raise NotImplementedError("Dilation > 1 not supported in BasicBlock")
         # Both self.conv1 and self.downsample layers downsample the input when stride != 1
         self.conv1 = conv3x3(inplanes, planes, stride)
-        self.bn1 = norm_layer(planes)
+        self.bn1 = norm_layer([planes, 32, 32])
         self.relu = nn.ReLU(inplace=True)
         self.conv2 = conv3x3(planes, planes)
-        self.bn2 = norm_layer(planes)
+        self.bn2 = norm_layer([planes, 32, 32])
         self.downsample = downsample
         self.stride = stride
 
@@ -295,7 +295,7 @@ class ResNet(nn.Module):
 
         # Modify the first convolutional layer for CIFAR-10
         self.conv1 = nn.Conv2d(3, self.inplanes, kernel_size=3, stride=1, padding=1, bias=False)
-        self.bn1 = norm_layer(self.inplanes)
+        self.bn1 = norm_layer([self.inplanes, 32, 32])
         self.relu = nn.ReLU(inplace=True)
         # Remove the initial max-pooling layer
         self.maxpool = nn.Identity()  # No max-pooling for CIFAR-10
@@ -314,7 +314,7 @@ class ResNet(nn.Module):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
-            elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
+            elif isinstance(m, (nn.LayerNorm, nn.GroupNorm)):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
 
@@ -337,7 +337,7 @@ class ResNet(nn.Module):
         if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.Sequential(
                 conv1x1(self.inplanes, planes * block.expansion, stride),
-                norm_layer(planes * block.expansion),
+                norm_layer([planes * block.expansion, 32, 32]),
             )
 
         layers = []
