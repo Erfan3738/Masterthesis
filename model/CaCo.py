@@ -121,8 +121,10 @@ class CaCo(nn.Module):
                 # if update_key_encoder:
             self._momentum_update_key_encoder_param(moco_momentum)# update the key encoder
             for key_image in [im_k]+im_q_list[:1]:
+                key_image, idx_unshuffle1 = self._batch_shuffle_single_gpu(key_image)
                 q = self.encoder_k(key_image, use_feature=False)  # keys: NxC
                 q = nn.functional.normalize(q, dim=1)
+                q = self._batch_unshuffle_single_gpu(q, idx_unshuffle1)
                 q = q.detach()
                 key_list.append(q)
         return q_list,key_list
