@@ -38,6 +38,23 @@ def conv1x1(in_planes: int, out_planes: int, stride: int = 1) -> nn.Conv2d:
     return nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride, bias=False)
 
 
+class ChannelLayerNorm(nn.Module):
+    def __init__(self, num_channels: int, eps: float = 1e-5):
+        super(ChannelLayerNorm, self).__init__()
+        self.num_channels = num_channels
+        self.eps = eps
+        self.gamma = nn.Parameter(torch.ones(num_channels))  # Scale parameter
+        self.beta = nn.Parameter(torch.zeros(num_channels))  # Shift parameter
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # Compute mean and variance over spatial dimensions (H, W)
+        mean = x.mean(dim=[2, 3], keepdim=True)
+        var = x.var(dim=[2, 3], keepdim=True, unbiased=False)
+        # Normalize
+        x = (x - mean) / (torch.sqrt(var + self.eps))
+        # Scale and shift
+        return x * self.gamma.view(1, -1, 1, 1) + self.beta.view(1, -1, 1, 1)
+
 class BasicBlock(nn.Module):
     expansion: int = 1
 
@@ -54,13 +71,12 @@ class BasicBlock(nn.Module):
     ) -> None:
         super(BasicBlock, self).__init__()
         if norm_layer is None:
-            # Default to LayerNorm, reshaped for compatibility with convolutional layers
-            norm_layer = lambda num_features: nn.LayerNorm([num_features, 1, 1])
+            norm_layer = lambda num_features: ChannelLayerNorm(num_features)
         if groups != 1 or base_width != 64:
             raise ValueError('BasicBlock only supports groups=1 and base_width=64')
         if dilation > 1:
             raise NotImplementedError("Dilation > 1 not supported in BasicBlock")
-        # Both self.conv1 and self.downsample layers downsample the input when stride != 1
+        
         self.conv1 = conv3x3(inplanes, planes, stride)
         self.ln1 = norm_layer(planes)
         self.relu = nn.ReLU(inplace=True)
@@ -69,7 +85,7 @@ class BasicBlock(nn.Module):
         self.downsample = downsample
         self.stride = stride
 
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         identity = x
 
         out = self.conv1(x)
@@ -86,7 +102,6 @@ class BasicBlock(nn.Module):
         out = self.relu(out)
 
         return out
-
 
 class Bottleneck(nn.Module):
     # Bottleneck in torchvision places the stride for downsampling at 3x3 convolution(self.conv2)
@@ -282,7 +297,7 @@ class ResNet(nn.Module):
     ) -> None:
         super(ResNet, self).__init__()
         if norm_layer is None:
-            norm_layer = lambda num_features: nn.LayerNorm([num_features, 1, 1])
+            norm_layer = lambda num_features: ChannelLayerNorm(num_features)
         self._norm_layer = norm_layer
 
         self.inplanes = 64
@@ -313,7 +328,6 @@ class ResNet(nn.Module):
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
 
-        # Zero-initialize the last LN in each residual branch
         if zero_init_residual:
             for m in self.modules():
                 if isinstance(m, Bottleneck):
@@ -345,7 +359,6 @@ class ResNet(nn.Module):
                                 norm_layer=norm_layer))
 
         return nn.Sequential(*layers)
-
     def _forward_impl(self, x: Tensor, use_feature=True) -> Tensor:
         x = self.conv1(x)
         x = self.ln1(x)
