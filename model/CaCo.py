@@ -67,9 +67,26 @@ class CaCo(nn.Module):
     def _momentum_update_key_encoder_param(self,moco_momentum):
         for param_q, param_k in zip(self.encoder_q.parameters(), self.encoder_k.parameters()):
             param_k.data = param_k.data * moco_momentum + param_q.data * (1. - moco_momentum)
+    @torch.no_grad()
+    def _batch_shuffle_single_gpu(self, x):
+        """
+        Batch shuffle, for making use of BatchNorm.
+        """
+        # random shuffle index
+        idx_shuffle = torch.randperm(x.shape[0]).cuda()
 
-    
+        # index for restoring
+        idx_unshuffle = torch.argsort(idx_shuffle)
 
+        return x[idx_shuffle], idx_unshuffle
+
+    @torch.no_grad()
+    def _batch_unshuffle_single_gpu(self, x, idx_unshuffle):
+        """
+        Undo batch shuffle.
+        """
+        return x[idx_unshuffle]
+       
     def forward_withoutpred_sym(self,im_q,im_k,moco_momentum):
         q = self.encoder_q(im_q, use_feature=False)  # queries: NxC
         q = nn.functional.normalize(q, dim=1)
@@ -79,13 +96,17 @@ class CaCo(nn.Module):
         with torch.no_grad():  # no gradient to keys
                 # if update_key_encoder:
             self._momentum_update_key_encoder_param(moco_momentum)# update the key encoder
-
-            q = self.encoder_k(im_q, use_feature=False)  # keys: NxC
+           
+            im_q_, idx_unshuffle = self._batch_shuffle_single_gpu(im_q)
+            q = self.encoder_k(im_q_, use_feature=False)  # keys: NxC
             q = nn.functional.normalize(q, dim=1)
+            q = self._batch_unshuffle_single_gpu(q, idx_unshuffle)
             q = q.detach()
 
-            k = self.encoder_k(im_k, use_feature=False)  # keys: NxC
+            im_k_, idx_unshuffle1 = self._batch_shuffle_single_gpu(im_k)
+            k = self.encoder_k(im_k_, use_feature=False)  # keys: NxC
             k = nn.functional.normalize(k, dim=1)
+            k = self._batch_unshuffle_single_gpu(k, idx_unshuffle1)
             k = k.detach()
 
         return q_pred, k_pred, q, k
