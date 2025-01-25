@@ -50,7 +50,7 @@ class ModelBase(nn.Module):
 
 class CaCo(nn.Module):
    
-    def __init__(self, dim=128, m=0.99, arch='resnet18'):
+    def __init__(self,args, dim=128, m=0.99, arch='resnet18'):
         """
         dim: feature dimension (default: 128)
         K: queue size; number of negative keys (default: 65536)
