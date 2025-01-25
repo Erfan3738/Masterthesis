@@ -15,12 +15,12 @@ class CaCo(nn.Module):
         self.m = m
         # create the encoders
         # num_classes is the output fc dimension
-        self.encoder_q = base_encoder(num_classes=dim,norm_layer=nn.LayerNorm)
-        #self.encoder_q.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
-        #self.encoder_q.maxpool = nn.Identity()
-        self.encoder_k = base_encoder(num_classes=dim,norm_layer=nn.LayerNorm)
-        #self.encoder_k.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
-        #self.encoder_k.maxpool = nn.Identity()
+        self.encoder_q = base_encoder(num_classes=dim)
+        self.encoder_q.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
+        self.encoder_q.maxpool = nn.Identity()
+        self.encoder_k = base_encoder(num_classes=dim)
+        self.encoder_k.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
+        self.encoder_k.maxpool = nn.Identity()
         dim_mlp = self.encoder_q.fc.weight.shape[1]
         # we do not keep 
         self.encoder_q.fc = self._build_mlp(2,dim_mlp,args.mlp_dim,dim,last_bn=True)
