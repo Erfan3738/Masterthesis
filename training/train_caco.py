@@ -112,7 +112,7 @@ def update_multicrop_network(model, images, args, Memory_Bank,
                 g = -torch.div(g1, torch.norm(d1, dim=0))
                 g /= cur_adco_t
 
-                g = all_reduce(g) / torch.distributed.get_world_size()
+                
                 if i<2:
                     g_big_sum +=g
                     count_big +=1
