@@ -39,7 +39,7 @@ def init_memory(train_loader, model,Memory_Bank, criterion,
         # measure data loading time
         if args.gpu is not None:
             for k in range(len(images)):
-                images[k] = images[k].cuda(args.gpu, non_blocking=True)
+                images[k] = images[k].cuda(non_blocking=True)
         
         # compute output
         q, _, _, k  = model(im_q=images[0], im_k=images[1])
@@ -50,7 +50,7 @@ def init_memory(train_loader, model,Memory_Bank, criterion,
 
         logits = torch.cat([l_pos, l_neg], dim=1)
         logits /= 0.2#using the default param in MoCo temperature
-        labels = torch.zeros(logits.shape[0], dtype=torch.long).cuda(args.gpu)
+        labels = torch.zeros(logits.shape[0], dtype=torch.long).cuda()
         loss = criterion(logits, labels)
         # compute gradient and do SGD step
         optimizer.zero_grad()
