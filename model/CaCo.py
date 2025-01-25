@@ -1,9 +1,56 @@
 import torch
 import torch.nn as nn
+from torchvision.models import resnet
+from datetime import datetime
+from functools import partial
+from PIL import Image
+from torch.utils.data import DataLoader
+from torchvision import transforms
+from torchvision.datasets import CIFAR10
+from torchvision.models import resnet
+from tqdm import tqdm
+import argparse
+import json
+import math
+import os
+import pandas as pd
+import torch.nn.functional as F
+
+class ModelBase(nn.Module):
+    """
+    Common CIFAR ResNet recipe.
+    Comparing with ImageNet ResNet recipe, it:
+    (i) replaces conv1 with kernel=3, str=1
+    (ii) removes pool1
+    """
+    def __init__(self, feature_dim=128, arch=None):
+        super(ModelBase, self).__init__()
+
+        # use split batchnorm
+        norm_layer =  nn.BatchNorm2d
+        resnet_arch = getattr(resnet, arch)
+        net = resnet_arch(num_classes=feature_dim, norm_layer=norm_layer)
+
+        self.net = []
+        for name, module in net.named_children():
+            if name == 'conv1':
+                module = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
+            if isinstance(module, nn.MaxPool2d):
+                continue
+            if isinstance(module, nn.Linear):
+                self.net.append(nn.Flatten(1))
+            self.net.append(module)
+
+        self.net = nn.Sequential(*self.net)
+
+    def forward(self, x):
+        x = self.net(x)
+        # note: not normalized here
+        return x
 
 class CaCo(nn.Module):
    
-    def __init__(self, base_encoder,args, dim=128, m=0.999):
+    def __init__(self, dim=128, m=0.99, arch='resnet18'):
         """
         dim: feature dimension (default: 128)
         K: queue size; number of negative keys (default: 65536)
@@ -15,10 +62,10 @@ class CaCo(nn.Module):
         self.m = m
         # create the encoders
         # num_classes is the output fc dimension
-        self.encoder_q = base_encoder(feature_dim=dim,arch='resnet18')
+        self.encoder_q = ModelBase(feature_dim=dim, arch=arch)
         #self.encoder_q.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
         #self.encoder_q.maxpool = nn.Identity()
-        self.encoder_k = base_encoder(feature_dim=dim,arch='resnet18')
+        self.encoder_k = ModelBase(feature_dim=dim, arch=arch)
         #self.encoder_k.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
         #self.encoder_k.maxpool = nn.Identity()
         #dim_mlp = self.encoder_q.fc.weight.shape[1]
