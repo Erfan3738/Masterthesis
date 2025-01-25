@@ -101,13 +101,13 @@ class CaCo(nn.Module):
             q = self.encoder_k(im_q_, use_feature=False)  # keys: NxC
             q = nn.functional.normalize(q, dim=1)
             q = self._batch_unshuffle_single_gpu(q, idx_unshuffle)
-            q = q.detach()
+            
 
             im_k_, idx_unshuffle1 = self._batch_shuffle_single_gpu(im_k)
             k = self.encoder_k(im_k_, use_feature=False)  # keys: NxC
             k = nn.functional.normalize(k, dim=1)
             k = self._batch_unshuffle_single_gpu(k, idx_unshuffle1)
-            k = k.detach()
+            
 
         return q_pred, k_pred, q, k
     def forward_withoutpred_multicrop(self,im_q_list,im_k,moco_momentum):
