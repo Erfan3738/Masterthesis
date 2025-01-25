@@ -67,7 +67,7 @@ def main_worker(args):
 
     Memory_Bank = CaCo_PN(args.cluster,args.moco_dim)
 
-    model = CaCo(resnet18.ResNet18, args,
+    model = CaCo(ResNet18, args,
                            args.moco_dim, args.moco_m)
     
     #optimizer = torch.optim.SGD(model.parameters(), init_lr,
