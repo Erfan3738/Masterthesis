@@ -132,7 +132,7 @@ def main_worker(args):
         else:
 
             augmentation1 = [
-                    transforms.RandomResizedCrop(32),
+                    transforms.RandomCrop(32, padding=4),
                     transforms.RandomApply([
                         transforms.ColorJitter(0.4, 0.4, 0.4, 0.1)  # not strengthened
                     ], p=0.8),
@@ -144,7 +144,7 @@ def main_worker(args):
                 ]
 
             augmentation2 = [
-                    transforms.RandomResizedCrop(32),
+                    transforms.RandomCrop(32, padding=4),
                     transforms.RandomApply([
                         transforms.ColorJitter(0.4, 0.4, 0.4, 0.1)  # not strengthened
                     ], p=0.8),
@@ -195,7 +195,7 @@ def main_worker(args):
     for epoch in range(args.start_epoch, args.epochs):
 
         #adjust_learning_rate(optimizer, epoch, args)
-        #adjust_learning_rate2(optimizer, epoch, args, init_lr)    
+        adjust_learning_rate2(optimizer, epoch, args, init_lr)    
         #if args.type<10:
         if args.moco_m_decay:
             moco_momentum = adjust_moco_momentum(epoch, args)
