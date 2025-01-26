@@ -76,10 +76,8 @@ def main_worker(args):
                                 #momentum=args.momentum,
                                 #weight_decay=args.weight_decay)
  
-    from model.optimizer import  LARS
-    optimizer = LARS(model.parameters(), init_lr,
-                         weight_decay=args.weight_decay,
-                         momentum=args.momentum)
+    from model.optimizer import  AdamW
+    optimizer = AdamW(model.parameters())
     model.cuda()
     Memory_Bank.cuda()
     print("per gpu batch size: ",args.batch_size)
