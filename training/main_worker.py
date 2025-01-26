@@ -132,20 +132,15 @@ def main_worker(args):
         else:
 
             augmentation1 = [
+                    transforms.RandomHorizontalFlip(),
                     transforms.RandomCrop(32, padding=4),
-                    transforms.RandomGrayscale(p=0.2),
-                    
-                    transforms.RandomHorizontalFlip(p=0.5),
                     transforms.ToTensor(),
                     normalize
                 ]
 
             augmentation2 = [
+                    transforms.RandomHorizontalFlip(),
                     transforms.RandomCrop(32, padding=4),
-                    transforms.RandomGrayscale(p=0.2),
-                    
-                    
-                    transforms.RandomHorizontalFlip(p=0.5),
                     transforms.ToTensor(),
                     normalize
                 ]
