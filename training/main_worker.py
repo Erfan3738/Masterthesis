@@ -80,10 +80,13 @@ def main_worker(args):
     from model.optimizer import  AdamW
     from model.optimizer import  LARS
     #optimizer = AdamW(model.parameters())
-    optimizer = LARS(model.parameters(), init_lr,
-                         weight_decay=args.weight_decay,
-                         momentum=args.momentum)
-    optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-6)
+    #optimizer = LARS(model.parameters(), init_lr,
+                         #weight_decay=args.weight_decay,
+                         #momentum=args.momentum)
+    optimizer = torch.optim.SGD(model.parameters(), init_lr,
+                                momentum=args.momentum,
+                                weight_decay=args.weight_decay)
+    #optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-6)
     model.cuda()
     Memory_Bank.cuda()
     print("per gpu batch size: ",args.batch_size)
