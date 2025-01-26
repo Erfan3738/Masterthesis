@@ -19,6 +19,7 @@ from training.train_utils import adjust_learning_rate2,save_checkpoint
 from data_processing.loader import TwoCropsTransform, TwoCropsTransform2,GaussianBlur,Solarize
 from ops.knn_monitor import knn_monitor
 from resnet18 import resnet
+import torch.optim as optim
 def init_log_path(args,batch_size):
     """
     :param args:
@@ -82,6 +83,7 @@ def main_worker(args):
     #optimizer = LARS(model.parameters(), init_lr,
                          #weight_decay=args.weight_decay,
                          #momentum=args.momentum)
+    optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-6)
     model.cuda()
     Memory_Bank.cuda()
     print("per gpu batch size: ",args.batch_size)
