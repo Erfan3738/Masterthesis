@@ -191,7 +191,7 @@ def main_worker(args):
     for epoch in range(args.start_epoch, args.epochs):
 
         #adjust_learning_rate(optimizer, epoch, args)
-        adjust_learning_rate2(optimizer, epoch, args, init_lr)    
+        #adjust_learning_rate2(optimizer, epoch, args, init_lr)    
         #if args.type<10:
         if args.moco_m_decay:
             moco_momentum = adjust_moco_momentum(epoch, args)
