@@ -133,9 +133,6 @@ def main_worker(args):
 
             augmentation1 = [
                     transforms.RandomCrop(32, padding=4),
-                    transforms.RandomApply([
-                        transforms.ColorJitter(0.4, 0.4, 0.4, 0.1)  # not strengthened
-                    ], p=0.8),
                     transforms.RandomGrayscale(p=0.2),
                     
                     transforms.RandomHorizontalFlip(p=0.5),
@@ -145,9 +142,6 @@ def main_worker(args):
 
             augmentation2 = [
                     transforms.RandomCrop(32, padding=4),
-                    transforms.RandomApply([
-                        transforms.ColorJitter(0.4, 0.4, 0.4, 0.1)  # not strengthened
-                    ], p=0.8),
                     transforms.RandomGrayscale(p=0.2),
                     
                     
