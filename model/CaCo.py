@@ -1,7 +1,6 @@
 
 import torch
 import torch.nn as nn
-import PyramidNet
 
 class CaCo(nn.Module):
    
