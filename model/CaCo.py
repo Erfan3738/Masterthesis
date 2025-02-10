@@ -1,9 +1,11 @@
+
 import torch
 import torch.nn as nn
+import PyramidNet
 
 class CaCo(nn.Module):
    
-    def __init__(self, base_encoder,args, dim=128, m=0.999):
+    def __init__(self, base_encoder,args, dim=128, m=0.99):
         """
         dim: feature dimension (default: 128)
         K: queue size; number of negative keys (default: 65536)
@@ -16,11 +18,15 @@ class CaCo(nn.Module):
         # create the encoders
         # num_classes is the output fc dimension
         self.encoder_q = base_encoder(num_classes=dim)
+        #self.encoder_q.conv1 = nn.Conv2d(3, 64, 3, 1, 1, bias=False)
+        #self.encoder_q.maxpool = nn.Identity()
         self.encoder_k = base_encoder(num_classes=dim)
+        #self.encoder_k.conv1 = nn.Conv2d(3, 64, 3, 1, 1, bias=False)
+        #self.encoder_k.maxpool = nn.Identity()
         dim_mlp = self.encoder_q.fc.weight.shape[1]
         # we do not keep 
-        self.encoder_q.fc = self._build_mlp(3,dim_mlp,args.mlp_dim,dim,last_bn=False)
-        self.encoder_k.fc = self._build_mlp(3, dim_mlp, args.mlp_dim, dim,last_bn=False)
+        self.encoder_q.fc = self._build_mlp(2,dim_mlp,args.mlp_dim,dim,last_bn=False)
+        self.encoder_k.fc = self._build_mlp(2,dim_mlp,args.mlp_dim,dim,last_bn=False)
         
         #self.encoder_q.fc = self._build_mlp(2,dim_mlp,args.mlp_dim,dim,last_bn=True)
         #self.encoder_k.fc = self._build_mlp(2, dim_mlp, args.mlp_dim, dim, last_bn=True)
@@ -38,15 +44,16 @@ class CaCo(nn.Module):
             dim1 = input_dim if l == 0 else mlp_dim
             dim2 = output_dim if l == num_layers - 1 else mlp_dim
 
-            mlp.append(nn.Linear(dim1, dim2, bias=False))
+            #mlp.append(nn.Linear(dim1, dim2, bias=False))
 
             if l < num_layers - 1:
+                mlp.append(nn.Linear(dim1, dim2, bias=False))
                 mlp.append(nn.BatchNorm1d(dim2))
                 mlp.append(nn.ReLU(inplace=True))
-            elif last_bn:
+            else:
                 # follow SimCLR's design: https://github.com/google-research/simclr/blob/master/model_util.py#L157
                 # for simplicity, we further removed gamma in BN
-                mlp.append(nn.BatchNorm1d(dim2, affine=False))
+                mlp.append(nn.Linear(dim1, dim2, bias=True))
 
         return nn.Sequential(*mlp)
 
@@ -62,9 +69,26 @@ class CaCo(nn.Module):
     def _momentum_update_key_encoder_param(self,moco_momentum):
         for param_q, param_k in zip(self.encoder_q.parameters(), self.encoder_k.parameters()):
             param_k.data = param_k.data * moco_momentum + param_q.data * (1. - moco_momentum)
+    @torch.no_grad()
+    def _batch_shuffle_single_gpu(self, x):
+        """
+        Batch shuffle, for making use of BatchNorm.
+        """
+        # random shuffle index
+        idx_shuffle = torch.randperm(x.shape[0]).cuda()
 
-    
+        # index for restoring
+        idx_unshuffle = torch.argsort(idx_shuffle)
 
+        return x[idx_shuffle], idx_unshuffle
+
+    @torch.no_grad()
+    def _batch_unshuffle_single_gpu(self, x, idx_unshuffle):
+        """
+        Undo batch shuffle.
+        """
+        return x[idx_unshuffle]
+       
     def forward_withoutpred_sym(self,im_q,im_k,moco_momentum):
         q = self.encoder_q(im_q, use_feature=False)  # queries: NxC
         q = nn.functional.normalize(q, dim=1)
@@ -74,14 +98,18 @@ class CaCo(nn.Module):
         with torch.no_grad():  # no gradient to keys
                 # if update_key_encoder:
             self._momentum_update_key_encoder_param(moco_momentum)# update the key encoder
-
+           
+            #im_q_, idx_unshuffle = self._batch_shuffle_single_gpu(im_q)
             q = self.encoder_k(im_q, use_feature=False)  # keys: NxC
             q = nn.functional.normalize(q, dim=1)
-            q = q.detach()
+            #q = self._batch_unshuffle_single_gpu(q, idx_unshuffle)
+            
 
+            #im_k_, idx_unshuffle1 = self._batch_shuffle_single_gpu(im_k)
             k = self.encoder_k(im_k, use_feature=False)  # keys: NxC
             k = nn.functional.normalize(k, dim=1)
-            k = k.detach()
+            #k = self._batch_unshuffle_single_gpu(k, idx_unshuffle1)
+            
 
         return q_pred, k_pred, q, k
     def forward_withoutpred_multicrop(self,im_q_list,im_k,moco_momentum):
@@ -95,8 +123,10 @@ class CaCo(nn.Module):
                 # if update_key_encoder:
             self._momentum_update_key_encoder_param(moco_momentum)# update the key encoder
             for key_image in [im_k]+im_q_list[:1]:
+                key_image, idx_unshuffle1 = self._batch_shuffle_single_gpu(key_image)
                 q = self.encoder_k(key_image, use_feature=False)  # keys: NxC
                 q = nn.functional.normalize(q, dim=1)
+                q = self._batch_unshuffle_single_gpu(q, idx_unshuffle1)
                 q = q.detach()
                 key_list.append(q)
         return q_list,key_list
