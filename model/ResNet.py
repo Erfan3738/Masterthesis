@@ -831,5 +831,8 @@ class PyramidNet(nn.Module):
 
 
 
-def pyramid(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> ResNet:
+def pbasicblock(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> ResNet:
     return PyramidNet(BasicBlock1, **kwargs)
+
+def pbottleneck(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> ResNet:
+    return PyramidNet(Bottleneck1, **kwargs)
