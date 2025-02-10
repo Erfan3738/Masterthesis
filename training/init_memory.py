@@ -1,3 +1,4 @@
+
 import argparse
 import builtins
 import math
@@ -37,9 +38,9 @@ def init_memory(train_loader, model,Memory_Bank, criterion,
     model.train()
     for i, (images, _) in enumerate(train_loader):
         # measure data loading time
-        if args.gpu is not None:
-            for k in range(len(images)):
-                images[k] = images[k].cuda(args.gpu, non_blocking=True)
+        
+        for k in range(len(images)):
+            images[k] = images[k].cuda(non_blocking=True)
         
         # compute output
         q, _, _, k  = model(im_q=images[0], im_k=images[1])
@@ -50,7 +51,7 @@ def init_memory(train_loader, model,Memory_Bank, criterion,
 
         logits = torch.cat([l_pos, l_neg], dim=1)
         logits /= 0.2#using the default param in MoCo temperature
-        labels = torch.zeros(logits.shape[0], dtype=torch.long).cuda(args.gpu)
+        labels = torch.zeros(logits.shape[0], dtype=torch.long).cuda()
         loss = criterion(logits, labels)
         # compute gradient and do SGD step
         optimizer.zero_grad()
@@ -66,12 +67,12 @@ def init_memory(train_loader, model,Memory_Bank, criterion,
             progress.display(i)
 
         
-        output = concat_all_gather(k)
+        
        
-        batch_size = output.size(0)
+        batch_size = k.size(0)
         start_point = i * batch_size
         end_point = min((i + 1) * batch_size, args.cluster)
-        Memory_Bank.W.data[:, start_point:end_point] = output[:end_point - start_point].T
+        Memory_Bank.W.data[:, start_point:end_point] = k[:end_point - start_point].T
         
         if (i+1) * batch_size >= args.cluster:
             break
@@ -80,18 +81,6 @@ def init_memory(train_loader, model,Memory_Bank, criterion,
     #                            model.encoder_k.parameters()):
     #        param_k.data.copy_(param_q.data)  # initialize
     #else:
-    for param_q, param_k in zip(model.module.encoder_q.parameters(),
-                                model.module.encoder_k.parameters()):
+    for param_q, param_k in zip(model.encoder_q.parameters(),
+                                model.encoder_k.parameters()):
         param_k.data.copy_(param_q.data)  # initialize
-@torch.no_grad()
-def concat_all_gather(tensor):
-    """
-    Performs all_gather operation on the provided tensors.
-    *** Warning ***: torch.distributed.all_gather has no gradient.
-    """
-    tensors_gather = [torch.ones_like(tensor)
-        for _ in range(torch.distributed.get_world_size())]
-    torch.distributed.all_gather(tensors_gather, tensor, async_op=False)
-
-    output = torch.cat(tensors_gather, dim=0)
-    return output
