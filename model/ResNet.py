@@ -692,8 +692,8 @@ class Bottleneck1(nn.Module):
         self.conv2 = nn.Conv2d(planes, (planes*1), kernel_size=3, stride=stride,
                                padding=1, bias=False)
         self.bn3 = nn.BatchNorm2d((planes*1))
-        self.conv3 = nn.Conv2d((planes*1), planes * Bottleneck.outchannel_ratio, kernel_size=1, bias=False)
-        self.bn4 = nn.BatchNorm2d(planes * Bottleneck.outchannel_ratio)
+        self.conv3 = nn.Conv2d((planes*1), planes * Bottleneck1.outchannel_ratio, kernel_size=1, bias=False)
+        self.bn4 = nn.BatchNorm2d(planes * Bottleneck1.outchannel_ratio)
         self.relu = nn.ReLU(inplace=True)
         self.downsample = downsample
         self.stride = stride
