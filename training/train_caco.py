@@ -1,3 +1,4 @@
+
 import argparse
 import builtins
 import math
@@ -112,7 +113,7 @@ def update_multicrop_network(model, images, args, Memory_Bank,
                 g = -torch.div(g1, torch.norm(d1, dim=0))
                 g /= cur_adco_t
 
-                g = all_reduce(g) / torch.distributed.get_world_size()
+                
                 if i<2:
                     g_big_sum +=g
                     count_big +=1
@@ -207,7 +208,7 @@ def update_sym_network(model, images, args, Memory_Bank,
         g = -torch.div(g1, torch.norm(d1, dim=0))  - torch.div(g2,torch.norm(d2, dim=0))#/ args.mem_t  # c*k
         g /=cur_adco_t
         
-        g = all_reduce(g) / torch.distributed.get_world_size()
+        
         Memory_Bank.v.data = args.mem_momentum * Memory_Bank.v.data + g #+ args.mem_wd * Memory_Bank.W.data
         Memory_Bank.W.data = Memory_Bank.W.data - memory_lr * Memory_Bank.v.data
     with torch.no_grad():
@@ -331,9 +332,9 @@ def train_caco(train_loader, model, Memory_Bank, criterion,
         # measure data loading time
         data_time.update(time.time() - end)
 
-        if args.gpu is not None:
-            for k in range(len(images)):
-                images[k] = images[k].cuda(args.gpu, non_blocking=True)
+        
+        for k in range(len(images)):
+            images[k] = images[k].cuda(non_blocking=True)
         batch_size = images[0].size(0)
         if args.multi_crop:
             update_multicrop_network(model, images, args, Memory_Bank, losses, top1, top5,
@@ -351,29 +352,3 @@ def train_caco(train_loader, model, Memory_Bank, criterion,
             if args.rank == 0:
                 progress.write(train_log_path, i)
     return top1.avg
-
-
-
-@torch.no_grad()
-def all_reduce(tensor):
-    """
-    Performs all_reduce(mean) operation on the provided tensors.
-    *** Warning ***: torch.distributed.all_reduce has no gradient.
-    """
-    torch.distributed.all_reduce(tensor, async_op=False)
-
-    return tensor
-
-
-@torch.no_grad()
-def concat_all_gather(tensor):
-    """
-    Performs all_gather operation on the provided tensors.
-    *** Warning ***: torch.distributed.all_gather has no gradient.
-    """
-    tensors_gather = [torch.ones_like(tensor)
-                      for _ in range(torch.distributed.get_world_size())]
-    torch.distributed.all_gather(tensors_gather, tensor, async_op=False)
-
-    output = torch.cat(tensors_gather, dim=0)
-    return output
