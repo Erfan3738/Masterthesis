@@ -28,7 +28,7 @@ def knn_monitor(net, memory_data_loader, test_data_loader,
             feature_bank.append(feature)
             
             feature_labels.append(target)
-            print("KNN feature accumulation %d/%d"%(k,len(memory_data_loader)))
+            #print("KNN feature accumulation %d/%d"%(k,len(memory_data_loader)))
         # [D, N]
         torch.cuda.empty_cache()
         print("gpu consuming before combining:", torch.cuda.memory_allocated() / 1024 / 1024)
