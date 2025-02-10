@@ -695,14 +695,8 @@ class PyramidNet(nn.Module):
     def __init__(
             self,
             block: Type[Union[BasicBlock1, Bottleneck1]],
-            
-            num_classes: int = 10,
-            zero_init_residual: bool = False,
-            groups: int = 1,
-            width_per_group: int = 64,
-            replace_stride_with_dilation: Optional[List[bool]] = None,
-            norm_layer: Optional[Callable[..., nn.Module]] = None
-    ) -> None:
+            num_classes: int = 10) -> None:
+
         super(PyramidNet, self).__init__()
 
         self.alpha = 300
@@ -730,7 +724,7 @@ class PyramidNet(nn.Module):
         self.final_featuremap_dim = self.input_featuremap_dim
         self.bn_final= nn.BatchNorm2d(self.final_featuremap_dim)
         self.relu_final = nn.ReLU(inplace=True)
-        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+        self.avgpool = nn.AvgPool2d(8)
         self.fc = nn.Linear(self.final_featuremap_dim , num_classes)
 
 
@@ -742,19 +736,14 @@ class PyramidNet(nn.Module):
             #elif isinstance(m, nn.BatchNorm2d):
                 #m.weight.data.fill_(1)
                 #m.bias.data.zero_()
+               
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
             elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
-                
-        if zero_init_residual:
-            for m in self.modules():
-                if isinstance(m, Bottleneck1):
-                    nn.init.constant_(m.bn3.weight, 0)  # type: ignore[arg-type]
-                elif isinstance(m, BasicBlock1):
-                    nn.init.constant_(m.bn2.weight, 0)        
+
 
     def pyramidal_make_layer(self, block, block_depth, stride=1):
         downsample = None
@@ -794,6 +783,7 @@ class PyramidNet(nn.Module):
 
     def forward(self, x: Tensor,use_feature=True) -> Tensor:
         return self._forward_impl(x,use_feature=use_feature)
+
 
 
 
