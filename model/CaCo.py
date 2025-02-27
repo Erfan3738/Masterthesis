@@ -1,11 +1,84 @@
 
 import torch
 import torch.nn as nn
-import PyramidNet
+from torchvision.models import resnet
+from functools import partial
+
+class SplitBatchNorm(nn.BatchNorm2d):
+    def __init__(self, num_features, num_splits, **kw):
+        super().__init__(num_features, **kw)
+        self.num_splits = num_splits
+        
+    def forward(self, input):
+        N, C, H, W = input.shape
+        if self.training or not self.track_running_stats:
+            running_mean_split = self.running_mean.repeat(self.num_splits)
+            running_var_split = self.running_var.repeat(self.num_splits)
+            outcome = nn.functional.batch_norm(
+                input.view(-1, C * self.num_splits, H, W), running_mean_split, running_var_split, 
+                self.weight.repeat(self.num_splits), self.bias.repeat(self.num_splits),
+                True, self.momentum, self.eps).view(N, C, H, W)
+            self.running_mean.data.copy_(running_mean_split.view(self.num_splits, C).mean(dim=0))
+            self.running_var.data.copy_(running_var_split.view(self.num_splits, C).mean(dim=0))
+            return outcome
+        else:
+            return nn.functional.batch_norm(
+                input, self.running_mean, self.running_var, 
+                self.weight, self.bias, False, self.momentum, self.eps)
+
+class ModelBase(nn.Module):
+    """
+    Common CIFAR ResNet recipe.
+    Comparing with ImageNet ResNet recipe, it:
+    (i) replaces conv1 with kernel=3, str=1
+    (ii) removes pool1
+    """
+    def __init__(self, feature_dim=128, arch=None, bn_splits=16):
+        super(ModelBase, self).__init__()
+
+        # use split batchnorm
+        norm_layer = partial(SplitBatchNorm, num_splits=bn_splits) if bn_splits > 1 else nn.BatchNorm2d
+        resnet_arch = getattr(resnet, arch)
+        net = resnet_arch(num_classes=feature_dim, norm_layer=norm_layer)
+
+        self.net = []
+        for name, module in net.named_children():
+            if name == 'conv1':
+                module = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
+            if isinstance(module, nn.MaxPool2d):
+                continue
+            if name == 'fc':
+                continue  # Skip the final fc layer, we'll handle it separately
+            self.net.append(module)
+
+        # Get the encoder dimension (output dimension of the avgpool layer)
+        self.encoder_dim = net.fc.in_features
+        
+        # Define the base network without the final fc layer
+        self.net = nn.Sequential(*self.net)
+        
+        # Define the projection head to replace the fc layer
+        self.projection_head = nn.Sequential(
+            nn.Flatten(1),
+            nn.Linear(self.encoder_dim, self.encoder_dim),
+            nn.ReLU(inplace=True),
+            nn.Linear(self.encoder_dim, feature_dim)
+        )
+
+    def forward(self, x, return_features=True):
+        # Get features from the base network (output of avgpool layer)
+        features = self.net(x)
+        
+        # If return_features is True, return features directly (after avgpool)
+        if return_features:
+            return features
+        
+        # Otherwise, return the output of the projection head
+        return self.projection_head(features)
 
 class CaCo(nn.Module):
    
-    def __init__(self, base_encoder,args, dim=128, m=0.99):
+    def __init__(self, args, dim=128, m=0.99, arch='resnet18', bn_splits=8):
         """
         dim: feature dimension (default: 128)
         K: queue size; number of negative keys (default: 65536)
@@ -17,10 +90,10 @@ class CaCo(nn.Module):
         self.m = m
         # create the encoders
         # num_classes is the output fc dimension
-        self.encoder_q = base_encoder(num_classes=dim)
+        self.encoder_q = ModelBase(feature_dim=dim, arch=arch, bn_splits=bn_splits)
         #self.encoder_q.conv1 = nn.Conv2d(3, 64, 3, 1, 1, bias=False)
         #self.encoder_q.maxpool = nn.Identity()
-        self.encoder_k = base_encoder(num_classes=dim)
+        self.encoder_k = ModelBase(feature_dim=dim, arch=arch, bn_splits=bn_splits)
         #self.encoder_k.conv1 = nn.Conv2d(3, 64, 3, 1, 1, bias=False)
         #self.encoder_k.maxpool = nn.Identity()
         dim_mlp = self.encoder_q.fc.weight.shape[1]
