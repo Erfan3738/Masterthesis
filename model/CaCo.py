@@ -96,10 +96,10 @@ class CaCo(nn.Module):
         self.encoder_k = ModelBase(feature_dim=dim, arch=arch, bn_splits=bn_splits)
         #self.encoder_k.conv1 = nn.Conv2d(3, 64, 3, 1, 1, bias=False)
         #self.encoder_k.maxpool = nn.Identity()
-        dim_mlp = self.encoder_q.fc.weight.shape[1]
+        #dim_mlp = self.encoder_q.fc.weight.shape[1]
         # we do not keep 
-        self.encoder_q.fc = self._build_mlp(2,dim_mlp,args.mlp_dim,dim,last_bn=False)
-        self.encoder_k.fc = self._build_mlp(2,dim_mlp,args.mlp_dim,dim,last_bn=False)
+        #self.encoder_q.fc = self._build_mlp(2,dim_mlp,args.mlp_dim,dim,last_bn=False)
+        #self.encoder_k.fc = self._build_mlp(2,dim_mlp,args.mlp_dim,dim,last_bn=False)
         
         #self.encoder_q.fc = self._build_mlp(2,dim_mlp,args.mlp_dim,dim,last_bn=True)
         #self.encoder_k.fc = self._build_mlp(2, dim_mlp, args.mlp_dim, dim, last_bn=True)
