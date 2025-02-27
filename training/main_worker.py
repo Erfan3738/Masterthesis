@@ -170,7 +170,7 @@ def main_worker(gpu, ngpus_per_node, args):
 
     # Data loading code
     if args.dataset=='cifar10':
-        #traindir = os.path.join(args.data, 'train')
+        traindir = os.path.join(args.data, 'train')
         normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
         if args.multi_crop:
@@ -207,7 +207,10 @@ def main_worker(gpu, ngpus_per_node, args):
                     transforms.ToTensor(),
                     normalize
                 ]
-            train_dataset = CIFAR10(root='./datasets', train=True, download=True, transform=TwoCropsTransform2(augmentation1, augmentation2))
+            train_dataset = datasets.ImageFolder(
+                    traindir,
+                    TwoCropsTransform2(transforms.Compose(augmentation1),
+                                       transforms.Compose(augmentation2)))
             
         testdir = os.path.join(args.data, 'val')
         transform_test = transforms.Compose([
@@ -217,8 +220,8 @@ def main_worker(gpu, ngpus_per_node, args):
             normalize,
         ])
         from data_processing.imagenet import imagenet
-        val_dataset =CIFAR10(root='./datasets', train=True, download=True, transform=transform_test)
-        test_dataset =CIFAR10(root='./datasets', train=False, download=True, transform=transform_test)
+        val_dataset = imagenet(traindir, 1.0, transform_test)
+        test_dataset = datasets.ImageFolder(testdir, transform_test)
 
     else:
         print("We only support cifar10 dataset currently")
