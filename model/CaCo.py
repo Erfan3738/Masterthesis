@@ -65,7 +65,7 @@ class ModelBase(nn.Module):
             nn.Linear(self.encoder_dim, feature_dim)
         )
 
-    def forward(self, x, return_features=True):
+    def forward(self, x, use_feature=True):
         # Get features from the base network (output of avgpool layer)
         features = self.net(x)
         
