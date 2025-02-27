@@ -18,6 +18,7 @@ from ops.os_operation import mkdir, mkdir_rank
 from training.train_utils import adjust_learning_rate2,save_checkpoint
 from data_processing.loader import TwoCropsTransform, TwoCropsTransform2,GaussianBlur,Solarize
 from ops.knn_monitor import knn_monitor
+from torchvision.datasets import CIFAR10, STL10,Imagenette
 def init_log_path(args,batch_size):
     """
     :param args:
@@ -168,8 +169,8 @@ def main_worker(gpu, ngpus_per_node, args):
     cudnn.benchmark = True
 
     # Data loading code
-    if args.dataset=='ImageNet':
-        traindir = os.path.join(args.data, 'train')
+    if args.dataset=='cifar10':
+        #traindir = os.path.join(args.data, 'train')
         normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
         if args.multi_crop:
@@ -183,33 +184,30 @@ def main_worker(gpu, ngpus_per_node, args):
         else:
 
             augmentation1 = [
-                    transforms.RandomResizedCrop(224, scale=(0.2, 1.)),
+                    transforms.RandomResizedCrop(32),
                     transforms.RandomApply([
                         transforms.ColorJitter(0.4, 0.4, 0.2, 0.1)  # not strengthened
                     ], p=0.8),
                     transforms.RandomGrayscale(p=0.2),
-                    transforms.RandomApply([GaussianBlur([.1, 2.])], p=1.0),
+                    #transforms.RandomApply([GaussianBlur([.1, 2.])], p=1.0),
                     transforms.RandomHorizontalFlip(),
                     transforms.ToTensor(),
                     normalize
                 ]
 
             augmentation2 = [
-                    transforms.RandomResizedCrop(224, scale=(0.2, 1.)),
+                    transforms.RandomResizedCrop(32),
                     transforms.RandomApply([
                         transforms.ColorJitter(0.4, 0.4, 0.2, 0.1)  # not strengthened
                     ], p=0.8),
                     transforms.RandomGrayscale(p=0.2),
-                    transforms.RandomApply([GaussianBlur([.1, 2.])], p=0.1),
-                    transforms.RandomApply([Solarize()], p=0.2),
+                    #transforms.RandomApply([GaussianBlur([.1, 2.])], p=0.1),
+                    #transforms.RandomApply([Solarize()], p=0.2),
                     transforms.RandomHorizontalFlip(),
                     transforms.ToTensor(),
                     normalize
                 ]
-            train_dataset = datasets.ImageFolder(
-                    traindir,
-                    TwoCropsTransform2(transforms.Compose(augmentation1),
-                                       transforms.Compose(augmentation2)))
+            train_dataset = CIFAR10(root='./datasets', train=True, download=True, transform=TwoCropsTransform2(augmentation1, augmentation2))
             
         testdir = os.path.join(args.data, 'val')
         transform_test = transforms.Compose([
@@ -219,11 +217,11 @@ def main_worker(gpu, ngpus_per_node, args):
             normalize,
         ])
         from data_processing.imagenet import imagenet
-        val_dataset = imagenet(traindir, 0.2, transform_test)
-        test_dataset = datasets.ImageFolder(testdir, transform_test)
+        val_dataset =CIFAR10(root='./datasets', train=True, download=True, transform=transform_test)
+        test_dataset =CIFAR10(root='./datasets', train=False, download=True, transform=transform_test)
 
     else:
-        print("We only support ImageNet dataset currently")
+        print("We only support cifar10 dataset currently")
         exit()
 
     if args.distributed:
