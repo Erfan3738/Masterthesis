@@ -70,7 +70,7 @@ class ModelBase(nn.Module):
         features = self.net(x)
         
         # If return_features is True, return features directly (after avgpool)
-        if return_features:
+        if use_feature:
             return features
         
         # Otherwise, return the output of the projection head
