@@ -180,7 +180,7 @@ def main_worker(gpu, ngpus_per_node, args):
                                               args.min_scale_crops,
                                               args.max_scale_crops, normalize)
             train_dataset = datasets.ImageFolder(
-                ./datasets/train, multi_transform)
+                /datasets/train, multi_transform)
         else:
 
             augmentation1 = [
