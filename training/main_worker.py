@@ -180,7 +180,7 @@ def main_worker(gpu, ngpus_per_node, args):
                                               args.min_scale_crops,
                                               args.max_scale_crops, normalize)
             train_dataset = datasets.ImageFolder(
-                traindir, multi_transform)
+                ./datasets/train, multi_transform)
         else:
 
             augmentation1 = [
@@ -208,7 +208,7 @@ def main_worker(gpu, ngpus_per_node, args):
                     normalize
                 ]
             train_dataset = datasets.ImageFolder(
-                    traindir,
+                    ./datasets/train,
                     TwoCropsTransform2(transforms.Compose(augmentation1),
                                        transforms.Compose(augmentation2)))
             
